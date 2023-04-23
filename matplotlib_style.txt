@@ -4,7 +4,6 @@ lines.linewidth : 1
                        
                        ## used by scatter plot s = l.ms**2
 #### * FONT *
-font.sans-serif: Arial
 #font.size : 6
 
 
