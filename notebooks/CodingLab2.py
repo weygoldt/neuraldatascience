@@ -100,12 +100,18 @@ def sample_data(
     """
 
     # insert your code here
+    n_labels = np.arange(0, len(m[:, 0]))
 
-    # ------------------------------------------------------
-    # draw labeled points from mixture of Gaussians (0.5 pt)
-    # ------------------------------------------------------
-    # return labels, x
-    pass
+    x = np.zeros((N, len(m[0])))
+    labels = np.zeros(N)
+    for i in range(N):
+        # create for one sample three cluster with the probalility
+        k = np.random.choice(n_labels, p=p)
+        # sample from a multivarian distribution 
+        x[i, :] =  np.random.multivariate_normal(m[k], S[k])
+        labels[i] = k
+
+    return labels, x
 
 
 # In[5]:
@@ -120,9 +126,8 @@ S1 = np.array([[1.0, 0.0], [0.0, 1.0]])
 S2 = np.array([[2.0, 1.0], [1.0, 2.0]])
 S3 = np.array([[1.0, -0.5], [-0.5, 1.0]])
 S = np.stack([S1, S2, S3])  # cov
-embed()
-exit()
-# labels, x = sample_data(N, m, S, p)
+
+labels, x = sample_data(N, m, S, p)
 
 
 # In[ ]:
@@ -185,17 +190,28 @@ def fit_mog(
     # fill in your code here
 
     np.random.seed(random_seed)
+    n, d = np.shape(x)
 
-    # -----------
-    # init (1 pt)
-    # -----------
-
+    # create and initialize the cluster centers and the weight paramters
+    weights = np.ones(k) / k
+    means = np.random.choice(x.flatten(), (k, d))
+    
+    # covariance matix guess
+    cov = [np.eye(d) for _ in range(k)]
     # -------------------------
     # EM maximisation (2.5 pts)
     # -------------------------
-
+    # go through all datapoints 
     for step in range(niters):
-        continue
+        
+        likelihood = np.zeros((n, k))
+
+        for cluster in range(k):
+            likelihood[:, cluster] = weights[cluster] * sp.stats.multivariate_normal.pdf(x, mean=means[cluster], cov=cov[cluster])
+        likelihood /= likelihood.sum(axis=1, keepdims=True)
+    embed()
+    exit()
+    #continue
         # E step
         # Evaluate the posterior probablibities `r`
         # using the current values of `m` and `S`
@@ -211,7 +227,7 @@ def fit_mog(
 # In[8]:
 
 
-# mog_labels, m, S, p = fit_mog(x, 3, random_seed=0)
+mog_labels, m, S, p = fit_mog(x, 3, random_seed=0)
 
 
 # Plot toy data with cluster assignments and compare to original labels

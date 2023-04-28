@@ -55,7 +55,7 @@ image.cmap   : tab10             ## A colormap name, gray etc...
 
 
 #### * SCATTER PLOTS *
-scatter.marker : .               ## The default marker type for scatter plots.
+scatter.marker : .             ## The default marker type for scatter plots.
 #scatter.edgecolors : None     ## DO NOT USE
 
 
