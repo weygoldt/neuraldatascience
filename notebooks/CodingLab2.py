@@ -19,11 +19,12 @@
 # In[1]:
 
 
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
-import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
 from IPython import embed
+from sklearn.cluster import KMeans
+
 # from __future__ import annotations
 
 # get_ipython().run_line_magic('load_ext', 'jupyter_black')
@@ -151,7 +152,7 @@ fig, ax = plt.subplots(figsize=(5, 5))
 
 
 def fit_mog(
-    x: np.ndarray, k: int, niters: int = 10, random_seed: int = 2046
+    x: np.ndarray, n_clusters: int, niters: int = 10, random_seed: int = 2046
 ) -> tuple[np.ndarray]:
     """Fit Mixture of Gaussian model using EM algo.
 
@@ -161,7 +162,7 @@ def fit_mog(
     x: np.array, (n_samples, n_dims)
         Input data
 
-    k: int
+    n_clusters: int
         Number of clusters
 
     niters: int
@@ -190,25 +191,54 @@ def fit_mog(
     # fill in your code here
 
     np.random.seed(random_seed)
-    n, d = np.shape(x)
+    n, _ = np.shape(x)
 
-    # create and initialize the cluster centers and the weight paramters
-    weights = np.ones(k) / k
-    means = np.random.choice(x.flatten(), (k, d))
-    
-    # covariance matix guess
-    cov = [np.eye(d) for _ in range(k)]
-    # -------------------------
-    # EM maximisation (2.5 pts)
-    # -------------------------
-    # go through all datapoints 
+    ### Initialize the gausian mixture model with kmeans as first guess
+    kmeans = KMeans(n_clusters=n_clusters).fit(x)
+    # Intial gues from the kmeans for the centers or means! 
+    kmean_centers = kmeans.cluster_centers_
+    # Inital mixing coefficiant of the all cluster in n_clusters
+    pi = np.ones(n_clusters) / n_clusters
+    # Initial covariance matrix, identity marix with n_clusters rows 
+    cov = [np.eye(x.shape[1]) for _ in range(n_clusters)]
+
     for step in range(niters):
-        
-        likelihood = np.zeros((n, k))
 
-        for cluster in range(k):
-            likelihood[:, cluster] = weights[cluster] * sp.stats.multivariate_normal.pdf(x, mean=means[cluster], cov=cov[cluster])
-        likelihood /= likelihood.sum(axis=1, keepdims=True)
+        # E step calculation of gamma
+        # creating empty list with size of n_samples and n_clusters. ex (1000, 3) 1000 samples and 3 clusters
+        gamma_cluster = np.zeros((n, n_clusters))
+        # go through n_cluster to calulate the upper term of the gamma:
+        for cluster in range(n_clusters):
+            gamma_cluster[:, cluster]  = pi[cluster] * sp.stats.multivariate_normal.pdf(x, mean=kmean_centers[cluster], cov=cov[cluster])
+        # creating the sum of gamma over all n_clusters
+        gamma_all_clusters = np.sum(gamma_cluster, axis=1)
+        
+        gamma = gamma_cluster / gamma_all_clusters[:, np.newaxis]
+        
+        # M step updating the mean, pi, cov with gamma 
+
+
+
+
+    ## create and initialize the cluster centers and the weight paramters
+    #weights = np.ones(k) / k
+    #means = np.random.choice(x.flatten(), (k, d))
+    #
+    ## covariance matix guess
+    #cov = [np.eye(d) for _ in range(k)]
+    ## -------------------------
+    ## EM maximisation (2.5 pts)
+    ## -------------------------
+    #
+    #for step in range(niters):
+    #    probs = np.zeros((n, k))
+    #    for cluster in range(k):
+    #        probs[:, cluster] = weights[cluster] * sp.stats.multivariate_normal.pdf(x, mean=means[cluster], cov=cov[cluster])
+    #    #probs /= probs.sum(axis=1, keepdims=True)
+    #    
+    #    for cluster in range(k):  
+    #        yamma = probs[cluster]* weights[cluster]  / np.sum([probs[i] * weights[i] for i in range(k)], axis=0)
+
     embed()
     exit()
     #continue
