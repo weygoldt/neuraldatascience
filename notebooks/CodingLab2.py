@@ -24,6 +24,7 @@ import numpy as np
 import scipy as sp
 from IPython import embed
 from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
 
 # from __future__ import annotations
 
@@ -196,7 +197,7 @@ def fit_mog(
     ### Initialize the gausian mixture model with kmeans as first guess
     kmeans = KMeans(n_clusters=n_clusters).fit(x)
     # Intial gues from the kmeans for the centers or means! 
-    kmean_centers = kmeans.cluster_centers_
+    means = kmeans.cluster_centers_
     # Inital mixing coefficiant of the all cluster in n_clusters
     pi = np.ones(n_clusters) / n_clusters
     # Initial covariance matrix, identity marix with n_clusters rows 
@@ -204,62 +205,47 @@ def fit_mog(
 
     for step in range(niters):
 
-        # E step calculation of gamma
+        ### E step calculation of gamma
         # creating empty list with size of n_samples and n_clusters. ex (1000, 3) 1000 samples and 3 clusters
         gamma_cluster = np.zeros((n, n_clusters))
         # go through n_cluster to calulate the upper term of the gamma:
         for cluster in range(n_clusters):
-            gamma_cluster[:, cluster]  = pi[cluster] * sp.stats.multivariate_normal.pdf(x, mean=kmean_centers[cluster], cov=cov[cluster])
+            gamma_cluster[:, cluster]  = pi[cluster] * sp.stats.multivariate_normal.pdf(x, mean=means[cluster], cov=cov[cluster])
         # creating the sum of gamma over all n_clusters
         gamma_all_clusters = np.sum(gamma_cluster, axis=1)
-        
+        # calculating the gamma with the upper term and the sum of gamma over all n_clusters
         gamma = gamma_cluster / gamma_all_clusters[:, np.newaxis]
         
-        # M step updating the mean, pi, cov with gamma 
+        ### M step updating the mean, pi, cov with gamma 
+        for cluster in range(n_clusters):
+            # create a new n_k, amount of samples in the gausian 
+            n_k = np.sum(gamma[:, cluster])
+            # updating the new mixing coefficiant with the new samples
+            pi_new = n_k / n 
+            # updating the new mean
+            mean_new = np.sum(gamma[:, cluster][:, np.newaxis] * x, axis=0) / n_k
+            # updating the covariance matrix 
+            cov_new = np.dot((gamma[:, cluster][:, np.newaxis] * (x - mean_new)).T, (x - mean_new)) / n_k
+            # updating the new mean, pi, cov
+            means[cluster] = mean_new
+            pi[cluster] = pi_new
+            cov[cluster] = cov_new
 
-
-
-
-    ## create and initialize the cluster centers and the weight paramters
-    #weights = np.ones(k) / k
-    #means = np.random.choice(x.flatten(), (k, d))
-    #
-    ## covariance matix guess
-    #cov = [np.eye(d) for _ in range(k)]
-    ## -------------------------
-    ## EM maximisation (2.5 pts)
-    ## -------------------------
-    #
-    #for step in range(niters):
-    #    probs = np.zeros((n, k))
-    #    for cluster in range(k):
-    #        probs[:, cluster] = weights[cluster] * sp.stats.multivariate_normal.pdf(x, mean=means[cluster], cov=cov[cluster])
-    #    #probs /= probs.sum(axis=1, keepdims=True)
-    #    
-    #    for cluster in range(k):  
-    #        yamma = probs[cluster]* weights[cluster]  / np.sum([probs[i] * weights[i] for i in range(k)], axis=0)
-
-    embed()
-    exit()
-    #continue
-        # E step
-        # Evaluate the posterior probablibities `r`
-        # using the current values of `m` and `S`
-
-        # M step
-        # Estimate new `m`, `S` and `p`
-
-    pass
-
+        likelihoods = np.sum(np.log(gamma_all_clusters))
+        print(f"Step {step}: Likelihood = {likelihoods}")
+    labels = np.argmax(gamma, axis=1)
+    return labels, means, cov, pi
 
 # Run Mixture of Gaussian on toy data
 
 # In[8]:
 
-
+fit_mog(x, 3, random_seed=0, niters=10)
+gmm = GaussianMixture(n_components=3, max_iter=10).fit(x)
 mog_labels, m, S, p = fit_mog(x, 3, random_seed=0)
 
-
+embed()
+exit()
 # Plot toy data with cluster assignments and compare to original labels
 
 # In[ ]:
