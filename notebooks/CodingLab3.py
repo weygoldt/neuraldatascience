@@ -175,26 +175,56 @@ def deconv_ca(ca, tau, dt):
 
     sp_hat: np.array
     """
-    # filter the data 
+    # maby filter the signal first
+    # get the filter coefficients
+    coeffs = signal.butter(4, 0.3, "lowpass", fs=dt, output="sos")
+    plt.plot(np.arange(0, len(ca)), ca, c="y", label="raw")
+    # pass the filter coefficients   and the data to the filter function
+    filtered_data = signal.sosfiltfilt(sos=coeffs, x=ca)
+    plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="k", label="filtered")
 
-    # exponantial kernel
-    kernel = np.exp(-np.arange(0.01, 2* tau, 1/dt) / tau)
-    # normalize kernel
-    # kernel = kernel / np.sum(kernel)
-    # flip kernel
-    # kernel = np.flip(kernel)
-    # # convolve
-    # nfft = np.fft.fft(kernel)
-    # invers_kernel = np.fft.ifft(nfft)
+    # iterative local averaging the filtered data
+    # first itteration
 
-    sp_hat = signal.deconvolve(ca, kernel)
+    # #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="b")
+    # p_min = 0
+    # n = 0
+    # while (p_min < 0.5) or (n < 5000):
+    #     all_peaks = signal.find_peaks(filtered_data)[0]
+    #     diff_peaks = np.abs(np.diff(filtered_data[all_peaks]))
 
+    #     p_min = np.argmin(diff_peaks)
+    #     #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="b")
+    #     #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min]], filtered_data[all_peaks[p_min]], c="r")
+    #     p_min_before = p_min - 1
+    #     p_min_after = p_min + 1
+    #     #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min_before]], filtered_data[all_peaks[p_min_before]], c="g")
+    #     #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min_after]], filtered_data[all_peaks[p_min_after]], c="g")
 
+    #     for i in range(3):
+    #         mean_segment = np.mean(filtered_data[all_peaks[p_min_before] : all_peaks[p_min_after]])
+    #         filtered_data[all_peaks[p_min_before] : all_peaks[p_min_after]] = mean_segment
+           
+
+    #     print(n)
+    #     p_min = diff_peaks[p_min]
+    #     if n > 5000:
+    #         break
+    #     n += 1
+    filtered_data = signal.medfilt(filtered_data, 101)
+    
+    inv_kernel = np.exp(-np.arange(0, 3 * tau, 1 / dt) / tau)
+    #inv_kernel = np.fft.ifft
+    sp_hat,_ = signal.deconvolve(filtered_data, inv_kernel)
     sp_hat[sp_hat < 0] = 0
     print(sp_hat)
-    plt.plot(kernel)
-    embed()
-    exit()
+    #plt.plot(inv_kernel)
+    plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="r", label="medfilt")
+    plt.plot(np.arange(0, len(sp_hat)), sp_hat, c="g", label="deconv")
+    plt.legend()
+    plt.show()
+    
+
     return sp_hat
 
 
@@ -212,14 +242,14 @@ deconv_calcium_gcamp_cell = deconv_ca(calcium_gcamp_cell, 0.1, samplerate)
 
 
 fig, (ax, ax1) = plt.subplots(1, 2, figsize=(6, 5), layout="constrained")
-xlims = [10, 100]
-ax.plot(time_ogb, calcium_ogb_cell, label="ogb_calcium")
-ax.plot(time_ogb, deconv_calcium_ogb_cell, label="ogb_calcium_deconv")
+xlims = None #[10, 100]
+ax.plot( calcium_ogb_cell, label="ogb_calcium")
+ax.plot( deconv_calcium_ogb_cell, label="ogb_calcium_deconv")
 ax.set_xlim(xlims)
 ax.legend()
 
-ax1.plot(time_gcamp, calcium_gcamp_cell, label="gcamp_calcium")
-ax1.plot(time_gcamp, deconv_calcium_gcamp_cell, label="gcamp_calcium_deconv")
+ax1.plot( calcium_gcamp_cell, label="gcamp_calcium")
+ax1.plot( deconv_calcium_gcamp_cell, label="gcamp_calcium_deconv")
 ax1.set_xlim(xlims)
 ax1.legend()
 plt.show()
