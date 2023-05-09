@@ -172,7 +172,6 @@ plt.close()
 
 # In[13]:
 
-
 def deconv_ca(ca, tau, dt):
     """Compute the deconvolution of the calcium signal.
 
@@ -196,14 +195,13 @@ def deconv_ca(ca, tau, dt):
     """
 
     # get the filter coefficients
-    coeffs = signal.butter(4, tau+0.3, "lowpass", fs=dt, output="sos")
+    coeffs = signal.butter(4, tau + 0.3, "lowpass", fs=dt, output="sos")
     # pass the filter coefficients  and the data to the filter function
     filtered_data = signal.sosfiltfilt(sos=coeffs, x=ca)
-    plt.plot(filtered_data, label="filtered")
 
     # initialize the smoothing algorithm
-    n = 0
-    while n < 10000:
+    n_deconvolve = 0
+    while n_deconvolve < 10000:
         # find all peaks in the filtered data
         all_peaks = signal.find_peaks(filtered_data)[0]
         diff_peaks = np.abs(np.diff(filtered_data[all_peaks]))
@@ -211,29 +209,42 @@ def deconv_ca(ca, tau, dt):
         p_min = np.argmin(diff_peaks)
         # set the datapoints around the peak to the mean of the segment
         datapoints = 25
-        mean_segment = np.mean(
+        mean_segment = signal.medfilt(
             filtered_data[
                 np.arange(all_peaks[p_min] - datapoints, all_peaks[p_min] + datapoints)
             ],
+            5,
         )
         # replace the datapoints with the mean
         filtered_data[
             np.arange(all_peaks[p_min] - datapoints, all_peaks[p_min] + datapoints)
         ] = mean_segment
-        
+
         p_min = diff_peaks[p_min]
         # if the difference between peaks is larger than 1, break the loop
         if p_min > 1:
             break
-        n += 1
+        n_deconvolve += 1
 
-    kernel = np.exp(-np.arange(0, 2*tau, 1 / dt) / tau)
+    kernel = np.exp(-np.arange(0, 2* tau, 1 / dt) / tau)
     # deconvolve the filtered data with the kernel
-    sp_hat, _ = signal.deconvolve(filtered_data, kernel)
-    # heavy side function
+    invers_kernel = np.real(np.fft.ifft(1/ np.fft.fft(kernel)))
+    sp_hat = signal.convolve(filtered_data, invers_kernel, mode="same")
+    # sp_hat, _ = signal.deconvolve(filtered_data, kernel)
+
+    # # the deconvolution has n = len(signal) - len(gauss) + 1 points, https://stackoverflow.com/questions/40615034/understanding-scipy-deconvolve
+    # n_deconvolve = len(filtered_data) - len(kernel) + 1
+    # s = int((len(filtered_data) - n_deconvolve) / 2)
+    # # pad the array with zeros
+    # sp_hat = np.pad(sp_hat, (s, s + 1), "constant")
+    # # sp_hat = np.pad(sp_hat, (0, len(filtered_data) - len(sp_hat)), "constant")
+    # # heavy side function
     sp_hat[sp_hat < 0] = 0
-    # pad the array with zeros
-    sp_hat = np.pad(sp_hat, (0, len(filtered_data) - len(sp_hat)), "constant")
+    # plt.plot(sp_hat, label="deconvolved")
+    # plt.plot(filtered_data, label="filtered")
+    # plt.plot(ca, label="original")
+    # plt.legend()
+    # plt.show()
 
     return sp_hat, kernel
 
