@@ -178,22 +178,23 @@ def deconv_ca(ca, tau, dt):
     # filter the data 
 
     # exponantial kernel
-    kernel = np.exp(-np.arange(0, 2* tau, 1/dt) / tau)
+    kernel = np.exp(-np.arange(0.01, 2* tau, 1/dt) / tau)
     # normalize kernel
     # kernel = kernel / np.sum(kernel)
     # flip kernel
     # kernel = np.flip(kernel)
-    # convolve
-    nfft = np.fft.fft(kernel)
-    invers_kernel = np.fft.ifft(nfft)
+    # # convolve
+    # nfft = np.fft.fft(kernel)
+    # invers_kernel = np.fft.ifft(nfft)
 
-    sp_hat = signal.convolve(ca, invers_kernel, mode="same")
+    sp_hat = signal.deconvolve(ca, kernel)
 
 
     sp_hat[sp_hat < 0] = 0
     print(sp_hat)
-    plt.plot(invers_kernel)
-
+    plt.plot(kernel)
+    embed()
+    exit()
     return sp_hat
 
 
