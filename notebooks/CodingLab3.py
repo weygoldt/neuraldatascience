@@ -18,7 +18,7 @@
 # 
 # Two-photon imaging is widely used to study computations in populations of neurons. In this exercise sheet we will study properties of different indicators and work on methods to infer spikes from calcium traces. All data is provided at a sampling rate of 100 Hz. For analysis, please resample it to 25 Hz using `scipy.signal.decimate`.
 
-# In[32]:
+# In[3]:
 
 
 import pandas as pd
@@ -28,17 +28,17 @@ import numpy as np
 from scipy import signal
 from scipy.io import loadmat
 from IPython import embed
-#from __future__ import annotations
-#
-#get_ipython().run_line_magic('matplotlib', 'inline')
-#
-#get_ipython().run_line_magic('load_ext', 'jupyter_black')
-#
-#get_ipython().run_line_magic('load_ext', 'watermark')
-#get_ipython().run_line_magic('watermark', '--time --date --timezone --updated --python --iversions --watermark -p sklearn')
+# from __future__ import annotations
+
+# get_ipython().run_line_magic('matplotlib', 'inline')
+
+# get_ipython().run_line_magic('load_ext', 'jupyter_black')
+
+# get_ipython().run_line_magic('load_ext', 'watermark')
+# get_ipython().run_line_magic('watermark', '--time --date --timezone --updated --python --iversions --watermark -p sklearn')
 
 
-# In[2]:
+# In[4]:
 
 
 plt.style.use("../matplotlib_style.txt")
@@ -46,7 +46,7 @@ plt.style.use("../matplotlib_style.txt")
 
 # ## Load data
 
-# In[33]:
+# In[5]:
 
 
 # ogb dataset from Theis et al. 2016 Neuron
@@ -58,18 +58,28 @@ gcamp_calcium = pd.read_csv("../data/nds_cl_3_gcamp2_calcium.csv", header=0)
 gcamp_spikes = pd.read_csv("../data/nds_cl_3_gcamp2_spikes.csv", header=0)
 
 
-# In[34]:
+# In[6]:
 
 
 ogb_calcium.shape, ogb_spikes.shape, gcamp_calcium.shape, gcamp_spikes.shape
 
 
-# In[35]:
+# `<<<<<<< HEAD`
+
+# In[7]:
 
 
 ogb_spikes.head()
 ogb_calcium.head()
 # ogb_spikes["6"].to_numpy()
+
+
+# `=======`
+
+# In[8]:
+
+
+ogb_spikes.head()
 
 
 # ## Task 1: Visualization of calcium and spike recordings
@@ -78,7 +88,7 @@ ogb_calcium.head()
 # 
 # *Grading: 2 pts*
 
-# In[67]:
+# In[25]:
 
 
 good_cell_ogb = 4
@@ -98,48 +108,56 @@ calcium_gcamp_cell_dec = signal.decimate(calcium_gcamp_cell, int(downsaple_facto
 
 # Spike data
 spike_ogb_cell = ogb_spikes[f"{good_cell_ogb}"].to_numpy()
-# spike_ogb_cell_dec = signal.decimate(spike_ogb_cell, int(downsaple_factor))
+spike_ogb_cell_dec = signal.decimate(spike_ogb_cell, int(downsaple_factor))
 
 spike_gcamp_cell = gcamp_spikes[f"{good_cell_gcamp}"].to_numpy()
-# spike_gcamp_cell_dec = signal.decimate(spike_gcamp_cell, int(downsaple_factor))
+spike_gcamp_cell_dec = signal.decimate(spike_gcamp_cell, int(downsaple_factor))
 
 
 # --------------------------
 # make new time axis
 
-time_ogb = np.arange(0, len(calcium_ogb_cell) / 100, 1 / 100)
-time_ogb_dec = np.arange(0, len(calcium_ogb_cell_dec) / samplerate, 1 / samplerate)
-time_gcamp = np.arange(0, len(calcium_gcamp_cell) / 100, 1 / 100)
-time_gcamp_dec = np.arange(0, len(calcium_gcamp_cell_dec) / samplerate, 1 / samplerate)
+time_ogb = np.arange(0, len(calcium_ogb_cell)) / 100
+time_ogb_dec = np.arange(0, len(calcium_ogb_cell_dec)) / samplerate
+time_gcamp = np.arange(0, len(calcium_gcamp_cell)) / 100
+time_gcamp_dec = np.arange(0, len(calcium_gcamp_cell_dec)) / samplerate
 
 
 fig, axs = plt.subplots(
-    2, 2, figsize=(9, 5), height_ratios=[3, 1], layout="constrained"
+    2, 2, figsize=(9, 5), height_ratios=[3, 1], layout="constrained", sharex=True
 )
-xlims_ogb = [20, 100]
+xlims_ogb = [100, 150]
 xlims_gcamp = [100, 150]
-axs[0, 0].plot(time_ogb, calcium_ogb_cell)
-axs[0, 0].plot(time_ogb_dec, calcium_ogb_cell_dec)
+axs[0, 0].plot(time_ogb, calcium_ogb_cell, label="ogb")
+axs[0, 0].plot(time_ogb_dec, calcium_ogb_cell_dec, label="ogb dec")
 axs[0, 0].set_title("Calcium ogb")
 axs[0, 0].set_xlim(xlims_ogb)
+axs[0, 0].set_ylabel("Delta F/F")
+axs[0, 0].legend()
 
-axs[0, 1].plot(time_gcamp, calcium_gcamp_cell)
-axs[0, 1].plot(time_gcamp_dec, calcium_gcamp_cell_dec)
+
+axs[0, 1].plot(time_gcamp, calcium_gcamp_cell, label="gcamp")
+axs[0, 1].plot(time_gcamp_dec, calcium_gcamp_cell_dec, label="gcamp dec")
 axs[0, 1].set_title("Calcium gcamp")
+axs[0, 1].set_ylabel("Delta F/F")
 axs[0, 1].set_xlim(xlims_gcamp)
+axs[0, 1].legend()
 
 axs[1, 0].plot(time_ogb, spike_ogb_cell)
-# axs[1, 0].plot(time_ogb_dec, spike_ogb_cell_dec)
+axs[1, 0].plot(time_ogb_dec, spike_ogb_cell_dec)
 axs[1, 0].set_title("Spike ogb")
 axs[1, 0].set_xlim(xlims_ogb)
 axs[1, 0].scatter(time_ogb, spike_ogb_cell)
+axs[1, 0].set_ylabel("Spikes")
+axs[1, 0].set_xlabel("time [s]")
 
 axs[1, 1].plot(time_gcamp, spike_gcamp_cell)
-# axs[1, 1].plot(time_gcamp_dec, spike_gcamp_cell_dec)
+axs[1, 1].plot(time_gcamp_dec, spike_gcamp_cell_dec)
 axs[1, 1].scatter(time_gcamp, spike_gcamp_cell)
 axs[1, 1].set_title("Spike gcamp")
 axs[1, 1].set_xlim(xlims_gcamp)
-plt.close()
+axs[1, 1].set_ylabel("Spikes")
+axs[1, 1].set_xlabel("time [s]")
 
 
 # plot raw gcamp data
@@ -152,7 +170,7 @@ plt.close()
 # *Grading: 3 pts*
 # 
 
-# In[64]:
+# In[16]:
 
 
 def deconv_ca(ca, tau, dt):
@@ -174,103 +192,107 @@ def deconv_ca(ca, tau, dt):
     ------
 
     sp_hat: np.array
+    kernel: np.array
     """
-    # maby filter the signal first
+
     # get the filter coefficients
     coeffs = signal.butter(4, 0.3, "lowpass", fs=dt, output="sos")
-    #plt.plot(np.arange(0, len(ca)), ca, c="y", label="raw")
-    # pass the filter coefficients   and the data to the filter function
+    # pass the filter coefficients  and the data to the filter function
     filtered_data = signal.sosfiltfilt(sos=coeffs, x=ca)
-    #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="k", label="filtered")
 
-    # iterative local averaging the filtered data
-    # first itteration
 
-    #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="b")
-    p_min = 0
     n = 0
-    while (n < 5000):
+    while n < 5000:
         all_peaks = signal.find_peaks(filtered_data)[0]
         diff_peaks = np.abs(np.diff(filtered_data[all_peaks]))
 
         p_min = np.argmin(diff_peaks)
-        #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="b")
-        #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min]], filtered_data[all_peaks[p_min]], c="r", s=50)
-        p_min_before = p_min - 1
-        p_min_after = p_min + 1
-        #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min_before]], filtered_data[all_peaks[p_min_before]], c="g", s=50)
-        #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min_after]], filtered_data[all_peaks[p_min_after]], c="g", s=50)
 
-        datapoints = 150
-        mean_segment = np.mean(filtered_data[np.arange(all_peaks[p_min]-datapoints,all_peaks[p_min]+datapoints)])
-        filtered_data[np.arange(all_peaks[p_min]-datapoints,all_peaks[p_min]+datapoints)] = mean_segment
-           
-        #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="b")
-        print(n)
+
+        datapoints = 25
+        mean_segment = np.mean(
+            filtered_data[
+                np.arange(all_peaks[p_min] - datapoints, all_peaks[p_min] + datapoints)
+            ]
+        )
+        filtered_data[
+            np.arange(all_peaks[p_min] - datapoints, all_peaks[p_min] + datapoints)
+        ] = mean_segment
+
         p_min = diff_peaks[p_min]
-        print(p_min)
-        if n > 5000:
-            break
         if p_min > 1:
-            break 
+            break
         n += 1
 
-    #filtered_data = signal.medfilt(filtered_data, 101)
-    
     inv_kernel = np.exp(-np.arange(0, 3 * tau, 1 / dt) / tau)
-    #inv_kernel = np.fft.ifft
-    sp_hat,_ = signal.deconvolve(filtered_data, inv_kernel)
+
+    sp_hat, _ = signal.deconvolve(filtered_data, inv_kernel)
     sp_hat[sp_hat < 0] = 0
-    print(sp_hat)
-    #plt.plot(inv_kernel)
-    plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="r", label="medfilt")
-    plt.plot(np.arange(0, len(sp_hat)), sp_hat, c="g", label="deconv")
-    plt.legend()
-    plt.show()
-    
-
-    return sp_hat
+    sp_hat = np.pad(sp_hat, (0, len(filtered_data) - len(sp_hat)), "constant")
+    return sp_hat, inv_kernel
 
 
-deconv_calcium_ogb_cell = deconv_ca(calcium_ogb_cell, 0.5, samplerate)
-deconv_calcium_gcamp_cell = deconv_ca(calcium_gcamp_cell, 0.1, samplerate)
-
-
-# In[ ]:
-
-
-
-
-
-# In[65]:
-
-
-fig, (ax, ax1) = plt.subplots(1, 2, figsize=(6, 5), layout="constrained")
-xlims = None #[10, 100]
-ax.plot( calcium_ogb_cell, label="ogb_calcium")
-ax.plot( deconv_calcium_ogb_cell, label="ogb_calcium_deconv")
-ax.set_xlim(xlims)
-ax.legend()
-
-ax1.plot( calcium_gcamp_cell, label="gcamp_calcium")
-ax1.plot( deconv_calcium_gcamp_cell, label="gcamp_calcium_deconv")
-ax1.set_xlim(xlims)
-ax1.legend()
-plt.show()
-
-
-# In[31]:
-
-
-# --------------------------------------------------------------------------
-# Compare true and deconvolved spikes rates for the OGB or GCamP Cell (1 pt)
-# --------------------------------------------------------------------------
-
-fig, axs = plt.subplots(
-    3, 1, figsize=(6, 4), height_ratios=[1, 1, 1], gridspec_kw=dict(hspace=0)
+deconv_calcium_ogb_cell, ogb_kernel = deconv_ca(calcium_ogb_cell_dec, 0.5, samplerate)
+deconv_calcium_gcamp_cell, gcamp_kernel = deconv_ca(
+    calcium_gcamp_cell_dec, 0.1, samplerate
 )
 
-# OGB Cell
+
+# In[17]:
+
+
+fig, ax = plt.subplots(figsize=(6, 5), layout="constrained")
+
+ax.plot(ogb_kernel, label="ogb kernel")
+ax.plot(gcamp_kernel, label="gcamp kernel")
+ax.set_xlabel("time [s]")
+ax.set_ylabel("exponetial kernel")
+ax.legend()
+
+
+# In[26]:
+
+
+# OGB
+fig, axs = plt.subplots(
+    3,
+    1,
+    figsize=(6, 4),
+    height_ratios=[1, 1, 1],
+    gridspec_kw=dict(hspace=0),
+    sharex=True,
+)
+
+axs[0].plot(time_ogb_dec, calcium_ogb_cell_dec, label="ogb")
+axs[1].plot(time_ogb_dec, deconv_calcium_ogb_cell, label="ogb dec")
+axs[2].plot(time_ogb_dec, spike_ogb_cell_dec, label="ogb spike")
+axs[2].set_xlabel("time [s]")
+axs[0].set_ylabel("delta F/F")
+axs[1].set_ylabel("deconvolved delta F/F")
+axs[2].set_ylabel("Rate [Hz]")
+fig.align_labels()
+
+
+# In[28]:
+
+
+# GCAMP
+fig, axs = plt.subplots(
+    3,
+    1,
+    figsize=(6, 4),
+    height_ratios=[1, 1, 1],
+    gridspec_kw=dict(hspace=0),
+    sharex=True,
+)
+axs[0].plot(time_gcamp_dec, calcium_gcamp_cell_dec, label="ogb")
+axs[1].plot(time_gcamp_dec, deconv_calcium_gcamp_cell, label="ogb dec")
+axs[2].plot(time_gcamp_dec, spike_gcamp_cell_dec, label="ogb spike")
+axs[2].set_xlabel("time [s]")
+axs[0].set_ylabel("delta F/F")
+axs[1].set_ylabel("deconvolved delta F/F")
+axs[2].set_ylabel("Rate [Hz]")
+fig.align_labels()
 
 
 # ## Task 3: Run more complex algorithm
@@ -285,63 +307,65 @@ fig, axs = plt.subplots(
 # 
 # 
 
-# In[ ]:
+# In[30]:
 
 
-# run this cell to download the oopsi.py file if you haven't already mannually downloaded it
-# and put it in the same folder as this notebook
-#!wget https://raw.githubusercontent.com/liubenyuan/py-oopsi/master/oopsi.py
+import oasis
+
+c, s, b, g, lam = oasis.functions.deconvolve(calcium_ogb_cell_dec)
 
 
-# In[ ]:
+# In[36]:
 
-
-import oopsi
-
-
-# In[ ]:
-
-
-# --------------------------------------------------------------
-# Apply one of the advanced algorithms on the OGB Cell (0.5 pts)
-# --------------------------------------------------------------
-
-
-# In[ ]:
-
-
-# -------------------------------------------
-# Plot the results for the OGB Cell (0.5 pts)
-# -------------------------------------------
 
 fig, axs = plt.subplots(
-    3, 1, figsize=(6, 4), height_ratios=[1, 1, 1], gridspec_kw=dict(hspace=0)
+    3,
+    1,
+    figsize=(6, 5),
+    height_ratios=[1, 1, 1],
+    gridspec_kw=dict(hspace=0),
+    sharex=True,
 )
 
+axs[0].plot(time_ogb_dec, c, label="ogb_oasis")
+axs[1].plot(time_ogb_dec, s, label="spike_oasis")
+axs[2].plot(time_ogb_dec, spike_ogb_cell_dec, label="ogb spike")
+axs[2].set_xlabel("time [s]")
+axs[0].set_ylabel("denoised delta F/F")
+axs[1].set_ylabel("Rate [Hz]")
+axs[2].set_ylabel("Rate [Hz]")
+axs[2].set_xlim(0, 100)
+fig.align_labels()
 # OGB Cell
 
 
-# In[ ]:
+# In[40]:
 
 
-# ----------------------------------------------------------------
-# Apply one of the advanced algorithms on the GCamP Cell (0.5 pts)
-# ----------------------------------------------------------------
+c, s, b, g, lam = oasis.functions.deconvolve(calcium_gcamp_cell_dec)
 
 
-# In[ ]:
+# In[42]:
 
-
-# ---------------------------------------------
-# Plot the results for the GCamp Cell (0.5 pts)
-# ---------------------------------------------
 
 fig, axs = plt.subplots(
-    3, 1, figsize=(6, 4), height_ratios=[1, 1, 1], gridspec_kw=dict(hspace=0)
+    3,
+    1,
+    figsize=(6, 5),
+    height_ratios=[1, 1, 1],
+    gridspec_kw=dict(hspace=0),
+    sharex=True,
 )
 
-
-# GCamP Cell
+axs[0].plot(time_gcamp_dec, c, label="ogb_oasis")
+axs[1].plot(time_gcamp_dec, s, label="spike_oasis")
+axs[2].plot(time_gcamp_dec, spike_gcamp_cell_dec, label="ogb spike")
+axs[2].set_xlabel("time [s]")
+axs[0].set_ylabel("denoised delta F/F")
+axs[1].set_ylabel("Rate [Hz]")
+axs[2].set_ylabel("Rate [Hz]")
+axs[2].set_xlim(0, 100)
+fig.align_labels()
 
 
 # ## Task 4: Evaluation of algorithms
@@ -361,7 +385,36 @@ fig, axs = plt.subplots(
 
 # In[ ]:
 
+algo = []
+c = []
+indicator = []
 
+for cell in range(ogb_calcium.shape[1]):
+    # get the current cell out of the dataframe
+    cell_calcium_data = ogb_calcium[f"{cell}"].to_numpy()[~np.isnan(ogb_calcium[f"{cell}"].to_numpy())]
+    cell_spike_data = ogb_spikes[f"{cell}"].to_numpy()[~np.isnan(ogb_spikes[f"{cell}"].to_numpy())]
+    # decimate the data
+    ogb_calcium_dec = signal.decimate(cell_calcium_data, int(downsaple_factor))
+    spike_ogb_cell_dec = signal.decimate(cell_spike_data, int(downsaple_factor))
+    # caluclate the time array
+    time_ogb_dec = np.arange(0, len(ogb_calcium_dec)) / samplerate
+
+    # deconvolve the data with our function
+    deconv_calcium_ogb_cell, ogb_kernel = deconv_ca(ogb_calcium_dec, 0.5, samplerate)
+    # deconvolve the data with oasis
+    ca, s, b, g, lam = oasis.functions.deconvolve(ogb_calcium_dec)
+
+    # calulate the correlation between spike_ogb_cell_dec and deconv_calcium_ogb_cell
+    c.append(np.corrcoef(spike_ogb_cell_dec, deconv_calcium_ogb_cell)[0, 1])
+    algo.append("Our_Algorithm")
+    indicator.append("OGB")
+
+    # calulate the correlation between spike_ogb_cell_dec and oasis
+    c.append(np.corrcoef(spike_ogb_cell_dec, s)[0, 1])
+    algo.append("Oasis")
+    indicator.append("OGB")
+embed()
+exit()
 # -------------------------------------------------
 # Create dataframe for OGB Cell as described (1 pt)
 # -------------------------------------------------
