@@ -178,40 +178,44 @@ def deconv_ca(ca, tau, dt):
     # maby filter the signal first
     # get the filter coefficients
     coeffs = signal.butter(4, 0.3, "lowpass", fs=dt, output="sos")
-    plt.plot(np.arange(0, len(ca)), ca, c="y", label="raw")
+    #plt.plot(np.arange(0, len(ca)), ca, c="y", label="raw")
     # pass the filter coefficients   and the data to the filter function
     filtered_data = signal.sosfiltfilt(sos=coeffs, x=ca)
-    plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="k", label="filtered")
+    #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="k", label="filtered")
 
     # iterative local averaging the filtered data
     # first itteration
 
-    # #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="b")
-    # p_min = 0
-    # n = 0
-    # while (p_min < 0.5) or (n < 5000):
-    #     all_peaks = signal.find_peaks(filtered_data)[0]
-    #     diff_peaks = np.abs(np.diff(filtered_data[all_peaks]))
+    #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="b")
+    p_min = 0
+    n = 0
+    while (n < 5000):
+        all_peaks = signal.find_peaks(filtered_data)[0]
+        diff_peaks = np.abs(np.diff(filtered_data[all_peaks]))
 
-    #     p_min = np.argmin(diff_peaks)
-    #     #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="b")
-    #     #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min]], filtered_data[all_peaks[p_min]], c="r")
-    #     p_min_before = p_min - 1
-    #     p_min_after = p_min + 1
-    #     #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min_before]], filtered_data[all_peaks[p_min_before]], c="g")
-    #     #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min_after]], filtered_data[all_peaks[p_min_after]], c="g")
+        p_min = np.argmin(diff_peaks)
+        #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="b")
+        #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min]], filtered_data[all_peaks[p_min]], c="r", s=50)
+        p_min_before = p_min - 1
+        p_min_after = p_min + 1
+        #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min_before]], filtered_data[all_peaks[p_min_before]], c="g", s=50)
+        #plt.scatter(np.arange(0, len(filtered_data))[all_peaks[p_min_after]], filtered_data[all_peaks[p_min_after]], c="g", s=50)
 
-    #     for i in range(3):
-    #         mean_segment = np.mean(filtered_data[all_peaks[p_min_before] : all_peaks[p_min_after]])
-    #         filtered_data[all_peaks[p_min_before] : all_peaks[p_min_after]] = mean_segment
+        datapoints = 150
+        mean_segment = np.mean(filtered_data[np.arange(all_peaks[p_min]-datapoints,all_peaks[p_min]+datapoints)])
+        filtered_data[np.arange(all_peaks[p_min]-datapoints,all_peaks[p_min]+datapoints)] = mean_segment
            
+        #plt.plot(np.arange(0, len(filtered_data)), filtered_data, c="b")
+        print(n)
+        p_min = diff_peaks[p_min]
+        print(p_min)
+        if n > 5000:
+            break
+        if p_min > 1:
+            break 
+        n += 1
 
-    #     print(n)
-    #     p_min = diff_peaks[p_min]
-    #     if n > 5000:
-    #         break
-    #     n += 1
-    filtered_data = signal.medfilt(filtered_data, 101)
+    #filtered_data = signal.medfilt(filtered_data, 101)
     
     inv_kernel = np.exp(-np.arange(0, 3 * tau, 1 / dt) / tau)
     #inv_kernel = np.fft.ifft
