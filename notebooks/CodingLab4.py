@@ -136,9 +136,11 @@ def plotRaster(spikes, neuron):
     spikes_neuron = spikes_neuron.sort_values(by="Dir")
     # plot the spikes for each trial in a raster plot
 
+    embed()
+    exit()
+    for directions in dirs:
 
-    for trial in np.unique(spikes_neuron["Trial"]):
-        spikes_trial = spikes_neuron[spikes_neuron["Trial"] == trial]
+        spikes_trial=spikes_neuron[spikes_neuron["Dir"] == directions]
         ax.scatter(
             spikes_trial["SpikeTimes"],
             spikes_trial["Trial"],
