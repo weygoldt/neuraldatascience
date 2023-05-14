@@ -127,7 +127,7 @@ def plotRaster(spikes, neuron):
     this function does not return anything, it just creates a plot!
     """
 
-    fig, ax = plt.subplots(figsize=(8, 4))
+    #fig, ax = plt.subplots(figsize=(8, 4))
   
     # get subset of the dataframe for the neuron
     spikes_neuron = spikes[spikes["Neuron"] == neuron]
@@ -135,21 +135,26 @@ def plotRaster(spikes, neuron):
     # sort the spikes by direction
     spikes_neuron = spikes_neuron.sort_values(by="Dir")
     # plot the spikes for each trial in a raster plot
+    dirs = spikes_neuron["Dir"].unique()
 
-    embed()
-    exit()
-    for directions in dirs:
+    fig, ax = plt.subplots(len(dirs), sharex=True)
 
-        spikes_trial=spikes_neuron[spikes_neuron["Dir"] == directions]
-        ax.scatter(
-            spikes_trial["SpikeTimes"],
-            spikes_trial["Trial"],
+    for d, directions in enumerate(dirs):
+        spikes_neuron_dir=spikes_neuron[spikes_neuron["Dir"] == directions]
+
+        ax[d].scatter(
+            spikes_neuron_dir["relTime"],
+            spikes_neuron_dir["Trial"],
             marker="|",
             color="k",
-            s=10,
-            linewidths=0.5,
+            s=50,
+            linewidths=0.8,
         )
-
+        ax[d].set_ylabel(f'{directions}')
+        ax[d].set_yticks([])
+    plt.show()
+    embed()
+    exit()
     # -------------------------------------------------
     # Write a raster plot function for the data (2 pts)
     # -------------------------------------------------
@@ -165,8 +170,7 @@ def plotRaster(spikes, neuron):
 
 
 plotRaster(spikes, 28)
-embed()
-exit()
+
 plotRaster(spikes, 29)
 plotRaster(spikes, 36)
 plotRaster(spikes, 37)
