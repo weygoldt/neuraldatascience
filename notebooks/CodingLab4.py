@@ -169,11 +169,11 @@ def plotRaster(spikes, neuron):
 # In[30]:
 
 
-plotRaster(spikes, 28)
-
-plotRaster(spikes, 29)
-plotRaster(spikes, 36)
-plotRaster(spikes, 37)
+#plotRaster(spikes, 28)
+#
+#plotRaster(spikes, 29)
+#plotRaster(spikes, 36)
+#plotRaster(spikes, 37)
 
 
 # ## Task 2: Plot spike density functions
@@ -210,8 +210,65 @@ def plotPSTH(spikes, neuron):
 
     this function does not return anything, it just creates a plot!
     """
+    def gaussian_pdf(x, loc, scale):
+        pdf=np.exp(-(x-loc)**2/(2.0*scale**2))/(np.sqrt(2*np.pi)*scale)
+        return pdf
+    
 
-    # insert your code here
+    def find_nearest(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
+    spikes_neuron = spikes[spikes["Neuron"] == neuron]    # insert your code here
+    sigma = 0.1
+    tmax = 20 * sigma
+    ktime = np.arange(-tmax, tmax, 0.001)
+    kernel_o = gaussian_pdf(ktime, 0, sigma)
+    spikes_neuron = spikes_neuron.sort_values(by="Dir")
+    # plot the spikes for each trial in a raster plot
+    dirs = spikes_neuron["Dir"].unique()
+    time = np.arange(0, 2000.0, 0.1)
+    fig, ax = plt.subplots(len(dirs), figsize=(10, 9), sharex=True)
+
+    for d, directions in enumerate(dirs[::-1]):
+        spikes_neuron_dir = spikes_neuron[spikes_neuron["Dir"] == directions]
+        # create empty array for the rate
+        rates = np.zeros((len(spikes_neuron_dir['Trial'].unique()), len(time)))
+        for t, trial in enumerate(np.sort(spikes_neuron_dir['Trial'].unique())):
+            spikes_neuron_dir_trial = spikes_neuron_dir[spikes_neuron_dir['Trial']==trial]
+            spikes = spikes_neuron_dir_trial['relTime'].to_numpy()
+            index = []
+            for spike in spikes:
+                idx = find_nearest(time, spike)
+                index.append(idx)
+            brate = np.zeros(len(time))
+            brate[index] = 1.0
+            rate = np.convolve(brate, kernel_o, mode='same')
+            rates[t, :] = rate
+        ax[d].plot(time, np.mean(rates, axis=0))
+        ax[d].set_ylabel(f"{directions}", rotation=0, labelpad=20)
+        ax[d].set_yticks([])
+
+    fig.supylabel("Directions [degree]")
+    # create supylabel on the right side
+
+    # fig.supylabel("Trials n")
+    fig.supxlabel("Time [ms]")
+    embed()
+    exit()
+
+
+
+    # Gaussian kernel centered in ktime:    
+    
+    ## indices of spikes in time array:
+    # indices = np.asarray((spikes - time[0]) / dt, dtype=int)
+    ## binary spike train:
+    # brate = np.zeros(len(time))
+    # brate[indices[(indices >= 0) & (indices < len(time))]] = 1.0
+    ## convolution with kernel:
+    # rate = np.convolve(brate, kernel, mode="same")
 
     fig, ax = plt.subplots(figsize=(8, 4))
 
@@ -234,6 +291,7 @@ def plotPSTH(spikes, neuron):
 
 
 plotPSTH(spikes, 28)
+
 plotPSTH(spikes, 29)
 plotPSTH(spikes, 36)
 plotPSTH(spikes, 37)
