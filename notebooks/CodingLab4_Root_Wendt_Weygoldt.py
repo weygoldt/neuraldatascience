@@ -477,42 +477,41 @@ def get_data(spikes, neuron):
 # plot tuning curve and fit for different neurons (0.5 pts)
 # ---------------------------------------------------------
 
-dirs, counts = get_data(spikes, 28)
-tuningCurve(counts, dirs, show=True)
+# dirs, counts = get_data(spikes, 28)
+# tuningCurve(counts, dirs, show=True)
 
 
-# In[22]:
+# # In[22]:
 
 
-dirs, counts = get_data(spikes, 29)
-tuningCurve(counts, dirs, show=True)
-# add plot
+# dirs, counts = get_data(spikes, 29)
+# tuningCurve(counts, dirs, show=True)
+# # add plot
 
 
-# In[23]:
+# # In[23]:
 
 
-dirs, counts = get_data(spikes, 36)
-tuningCurve(counts, dirs, show=True)
-# add plot
+# dirs, counts = get_data(spikes, 36)
+# tuningCurve(counts, dirs, show=True)
+# # add plot
 
 
-# In[24]:
+# # In[24]:
 
 
-dirs, counts = get_data(spikes, 37)
-tuningCurve(counts, dirs, show=True)
-# add plot
+# dirs, counts = get_data(spikes, 37)
+# tuningCurve(counts, dirs, show=True)
+# # add plot
 
 
-# In[25]:
+# # In[25]:
 
 
-dirs, counts = get_data(spikes, 32)
-tuningCurve(counts, dirs, show=True)
-# add plot
-embed()
-exit()
+# dirs, counts = get_data(spikes, 32)
+# tuningCurve(counts, dirs, show=True)
+# # add plot
+
 
 # ## Task 4: Permutation test for direction tuning
 # 
@@ -564,6 +563,20 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False):
     """
 
     # insert your code here
+    means = np.zeros(len(np.unique(dirs)))
+    dirs_unique = np.unique(dirs)
+    for d, directions in enumerate(np.unique(dirs)):
+        means[d] = np.mean(counts[dirs == directions])
+
+    # imaginary exponential function mu 
+    dirs_unique_rad = np.deg2rad(dirs_unique)
+    
+    mu = np.exp(1j * dirs_unique_rad *psi)   
+
+    q = means @ mu 
+
+    embed()
+    exit()
 
     # -------------------------------
     # calculate m, nu and q (0.5 pts)
@@ -593,6 +606,7 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False):
 # ------------------------------------------------------------
 
 dirs, counts = get_data(spikes, 28)
+testTuning(counts, dirs, psi=1, niters=1000, show=False)
 # add plot
 
 
