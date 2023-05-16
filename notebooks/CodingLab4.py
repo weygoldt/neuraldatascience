@@ -15,7 +15,7 @@
 # 
 # If needed, download the data files ```nds_cl_4_*.csv``` from ILIAS and save it in the subfolder ```../data/```. Use a subset of the data for testing and debugging, ideally focus on a single cell (e.g. cell number x). The spike times and stimulus conditions are read in as pandas data frames. You can solve the exercise by making heavy use of that, allowing for many quite compact computationis. If you need help on that, there is lots of [documentation](http://pandas.pydata.org/pandas-docs/stable/index.html) and several good [tutorials](https://www.datacamp.com/community/tutorials/pandas-tutorial-dataframe-python#gs.L37i87A) are available online. Of course, converting the data into classical numpy arrays is also valid.
 
-# In[1]:
+# In[7]:
 
 
 import pandas as pd
@@ -25,19 +25,20 @@ import matplotlib as mpl
 import numpy as np
 import scipy.optimize as opt
 from IPython import embed
+
 from scipy import signal as signal
 
 import itertools
 
-# get_ipython().run_line_magic('matplotlib', 'inline')
+# %matplotlib qt6
+# `
+# # get_ipython().run_line_magic('load_ext', 'jupyter_black')
 
-# get_ipython().run_line_magic('load_ext', 'jupyter_black')
+# # get_ipython().run_line_magic('load_ext', 'watermark')
+# # get_ipython().run_line_magic('watermark', '--time --date --timezone --updated --python --iversions --watermark -p sklearn')
+# `
 
-# get_ipython().run_line_magic('load_ext', 'watermark')
-# get_ipython().run_line_magic('watermark', '--time --date --timezone --updated --python --iversions --watermark -p sklearn')
-
-
-# In[2]:
+# In[8]:
 
 
 plt.style.use("../matplotlib_style.txt")
@@ -45,7 +46,7 @@ plt.style.use("../matplotlib_style.txt")
 
 # ## Load data
 
-# In[3]:
+# In[9]:
 
 
 spikes = pd.read_csv("../data/nds_cl_4_spiketimes.csv")  # neuron id, spike time
@@ -61,7 +62,7 @@ stims["StimOffset"] = stims["StimOnset"] + stimDur
 
 # We require some more information about the spikes for the plots and analyses we intend to make later. With a solution based on dataframes, it is natural to compute this information here and add it as additional columns to the `spikes` dataframe by combining it with the `stims` dataframe. We later need to know which condition (`Dir`) and trial (`Trial`) a spike was recorded in, the relative spike times compared to stimulus onset of the stimulus it was recorded in (`relTime`) and whether a spike was during the stimulation period (`stimPeriod`). But there are many options how to solve this exercise and you are free to choose any of them.
 
-# In[4]:
+# In[10]:
 
 
 # you may add computations as specified above
@@ -89,7 +90,7 @@ for i, row in stims.iterrows():
 spikes = spikes.dropna()
 
 
-# In[8]:
+# In[11]:
 
 
 spikes.head()
@@ -104,7 +105,7 @@ spikes.head()
 # *Grading: 2 pts*
 # 
 
-# In[29]:
+# In[12]:
 
 
 def plotRaster(spikes, neuron):
@@ -127,37 +128,33 @@ def plotRaster(spikes, neuron):
     this function does not return anything, it just creates a plot!
     """
 
-    #fig, ax = plt.subplots(figsize=(8, 4))
-  
-    # get subset of the dataframe for the neuron
     spikes_neuron = spikes[spikes["Neuron"] == neuron]
 
     # sort the spikes by direction
     spikes_neuron = spikes_neuron.sort_values(by="Dir")
     # plot the spikes for each trial in a raster plot
-    dirs = spikes_neuron["Dir"].unique()
+    dirs = spikes_neuron["Dir"].unique()[::-1]
 
-    fig, ax = plt.subplots(len(dirs), sharex=True)
+    fig, ax = plt.subplots(len(dirs), figsize=(10, 9), sharex=True)
 
     for d, directions in enumerate(dirs):
-        spikes_neuron_dir=spikes_neuron[spikes_neuron["Dir"] == directions]
-
+        spikes_neuron_dir = spikes_neuron[spikes_neuron["Dir"] == directions]
         ax[d].scatter(
             spikes_neuron_dir["relTime"],
             spikes_neuron_dir["Trial"],
             marker="|",
             color="k",
-            s=50,
+            s=20,
             linewidths=0.8,
         )
-        ax[d].set_ylabel(f'{directions}')
+        ax[d].set_ylabel(f"{directions}", rotation=0, labelpad=20)
         ax[d].set_yticks([])
-    plt.show()
-    embed()
-    exit()
-    # -------------------------------------------------
-    # Write a raster plot function for the data (2 pts)
-    # -------------------------------------------------
+    ax[0].set_title(f"Neuron {neuron}")
+    fig.supylabel("Directions [degree]")
+    # create supylabel on the right side
+
+    # fig.supylabel("Trials n")
+    fig.supxlabel("Time [ms]")
 
     # insert your code here
     # stim direction should be on the y-axis and time on the x-axis
@@ -166,14 +163,13 @@ def plotRaster(spikes, neuron):
 
 # Show examples of different neurons. Good candidates to check are 28, 29, 36 or 37. 
 
-# In[30]:
+# In[13]:
 
 
-#plotRaster(spikes, 28)
-#
-#plotRaster(spikes, 29)
-#plotRaster(spikes, 36)
-#plotRaster(spikes, 37)
+# plotRaster(spikes, 28)
+# plotRaster(spikes, 29)
+# plotRaster(spikes, 36)
+# plotRaster(spikes, 37)
 
 
 # ## Task 2: Plot spike density functions
@@ -188,7 +184,7 @@ def plotRaster(spikes, neuron):
 # *Grading: 2 pts*
 # 
 
-# In[ ]:
+# In[14]:
 
 
 def plotPSTH(spikes, neuron):
@@ -210,17 +206,21 @@ def plotPSTH(spikes, neuron):
 
     this function does not return anything, it just creates a plot!
     """
+
     def gaussian_pdf(x, loc, scale):
-        pdf=np.exp(-(x-loc)**2/(2.0*scale**2))/(np.sqrt(2*np.pi)*scale)
+        pdf = np.exp(-((x - loc) ** 2) / (2.0 * scale**2)) / (
+            np.sqrt(2 * np.pi) * scale
+        )
         return pdf
-    
 
     def find_nearest(array, value):
         array = np.asarray(array)
         idx = (np.abs(array - value)).argmin()
         return idx
 
-    spikes_neuron = spikes[spikes["Neuron"] == neuron]    # insert your code here
+    max_trials = 11
+    spikes_neuron = spikes[spikes["Neuron"] == neuron]
+    # insert your code here
     sigma = 0.1
     tmax = 20 * sigma
     ktime = np.arange(-tmax, tmax, 0.001)
@@ -229,79 +229,53 @@ def plotPSTH(spikes, neuron):
     # plot the spikes for each trial in a raster plot
     dirs = spikes_neuron["Dir"].unique()
     time = np.arange(0, 2000.0, 0.1)
-    fig, ax = plt.subplots(len(dirs), figsize=(10, 9), sharex=True)
+    fig, ax = plt.subplots(len(dirs), figsize=(10, 9), sharex=True, sharey=True)
 
     for d, directions in enumerate(dirs[::-1]):
         spikes_neuron_dir = spikes_neuron[spikes_neuron["Dir"] == directions]
         # create empty array for the rate
-        rates = np.zeros((len(spikes_neuron_dir['Trial'].unique()), len(time)))
-        for t, trial in enumerate(np.sort(spikes_neuron_dir['Trial'].unique())):
-            spikes_neuron_dir_trial = spikes_neuron_dir[spikes_neuron_dir['Trial']==trial]
-            spikes = spikes_neuron_dir_trial['relTime'].to_numpy()
+        rates = np.zeros((len(spikes_neuron_dir["Trial"].unique()), len(time)))
+        for t, trial in enumerate(np.sort(spikes_neuron_dir["Trial"].unique())):
+            spikes_neuron_dir_trial = spikes_neuron_dir[
+                spikes_neuron_dir["Trial"] == trial
+            ]
+            spikes = spikes_neuron_dir_trial["relTime"].to_numpy()
             index = []
             for spike in spikes:
                 idx = find_nearest(time, spike)
                 index.append(idx)
-            brate = np.zeros(len(time))
-            brate[index] = 1.0
-            rate = np.convolve(brate, kernel_o, mode='same')
+            binaryrate = np.zeros(len(time))
+            binaryrate[index] = 1.0
+            rate = np.convolve(binaryrate, kernel_o, mode="same")
             rates[t, :] = rate
-        ax[d].plot(time, np.mean(rates, axis=0))
+        mean_rates = np.sum(rates, axis=0) / max_trials
+        ax[d].plot(time, mean_rates)
         ax[d].set_ylabel(f"{directions}", rotation=0, labelpad=20)
         ax[d].set_yticks([])
-
+    ax[0].set_title(f"Neuron {neuron}")
     fig.supylabel("Directions [degree]")
     # create supylabel on the right side
 
     # fig.supylabel("Trials n")
     fig.supxlabel("Time [ms]")
-    embed()
-    exit()
-
-
-
-    # Gaussian kernel centered in ktime:    
-    
-    ## indices of spikes in time array:
-    # indices = np.asarray((spikes - time[0]) / dt, dtype=int)
-    ## binary spike train:
-    # brate = np.zeros(len(time))
-    # brate[indices[(indices >= 0) & (indices < len(time))]] = 1.0
-    ## convolution with kernel:
-    # rate = np.convolve(brate, kernel, mode="same")
-
-    fig, ax = plt.subplots(figsize=(8, 4))
-
-    # ------------------------------------------------
-    # Implement one of the spike rate estimates (1 pt)
-    # ------------------------------------------------
-
-    # ---------------------------------------------
-    # Plot the obtained spike rate estimates (1 pt)
-    # ---------------------------------------------
-
-    # plot should look similar to `plotRaster`
-    # you can plot use plt.hist for each direction, but much cleaner
-    # is to only plot bin centers vs bin heights using plt.plot
 
 
 # Show examples of different neurons. Good candidates to check are 28, 29, 36 or 37. 
 
-# In[ ]:
+# In[15]:
 
 
-plotPSTH(spikes, 28)
-
-plotPSTH(spikes, 29)
-plotPSTH(spikes, 36)
-plotPSTH(spikes, 37)
-
-
-# In[ ]:
+# plotPSTH(spikes, 28)
+# plotPSTH(spikes, 29)
+# plotPSTH(spikes, 36)
+# plotPSTH(spikes, 37)
 
 
-plotRaster(spikes, 37)
-plotPSTH(spikes, 37)
+# # In[16]:
+
+
+# plotRaster(spikes, 37)
+# plotPSTH(spikes, 37)
 
 
 # ## Task 3: Fit and plot tuning functions
@@ -320,10 +294,10 @@ plotPSTH(spikes, 37)
 # 
 # *Grading: 3 pts*
 
-# In[ ]:
+# In[17]:
 
 
-def vonMises(θ, α, κ, ν, ϕ):
+def vonMises(theta, alpha, kappa, nu, phi):
     """Evaluate the parametric von Mises tuning curve with parameters p at locations theta.
 
     Parameters
@@ -332,7 +306,7 @@ def vonMises(θ, α, κ, ν, ϕ):
     θ: np.array, shape=(N, )
         Locations. The input unit is degree.
 
-    α, κ, ν, ϕ : float
+    theta, alpha, kappa, nu, phi: float
         Function parameters
 
     Return
@@ -341,7 +315,13 @@ def vonMises(θ, α, κ, ν, ϕ):
         Tuning curve.
     """
 
+    theta = np.radians(theta)
+    phi = np.radians(phi)
+
     # insert your code here
+    f = np.exp(
+        alpha + kappa * (np.cos(2 * (theta - phi)) - 1) + nu * (np.cos(theta - phi) - 1)
+    )
 
     # -----------------------------------
     # Implement the Mises model (0.5 pts)
@@ -352,17 +332,57 @@ def vonMises(θ, α, κ, ν, ϕ):
 
 # Plot the von Mises function while varying the parameters systematically.
 
-# In[ ]:
+# In[18]:
 
 
 # --------------------------------------------------------------------------------
 # plot von Mises curves with varying parameters and explain what they do (0.5 pts)
 # --------------------------------------------------------------------------------
+alpha = np.arange(-1, 1, 0.1)
+kappa = np.arange(0, 10, 1)
+nu = np.arange(0, 10, 1)
+phi = np.arange(0, 2 * np.pi, np.pi / 2)
+theta = np.arange(0, 2 * np.pi, 0.1)
+x = np.linspace(
+    0,
+    360,
+    len(theta),
+)
+fig, ax = plt.subplots(1, 5, figsize=(20, 4))
+for i, a in enumerate(alpha):
+    f = vonMises(theta, a, 1, 1, 0)
+    ax[0].plot(x, f, label=f"alpha = {a}")
 
-fig, ax = plt.subplots(figsize=(8, 4))
+    # ax[0].legend()
+for i, k in enumerate(kappa):
+    f = vonMises(theta, 0, k, 1, 0)
+    ax[1].plot(x, f, label=f"kappa = {k}")
+    # ax[1].legend()
+for i, n in enumerate(nu):
+    f = vonMises(theta, 0, 1, n, 0)
+    ax[2].plot(x, f, label=f"nu = {n}")
+    # ax[2].legend()
+for i, p in enumerate(phi):
+    f = vonMises(theta, 0, 1, 1, p)
+    ax[3].plot(x, f, label=f"phi = {p}")
+    # ax[3].legend()
+for i, t in enumerate(theta):
+    f = vonMises(t, 0, 1, 1, 0)
+    ax[4].scatter(t, f, label=f"theta = {t}")
+ax[0].set_title("alpha")
+ax[1].set_title("kappa")
+ax[2].set_title("nu")
+ax[3].set_title("phi")
+ax[4].set_title("theta")
+plt.close()
 
+# - alpha is scales up the peak of the function
+# - kappa is the width of the peak
+# - nu scales the peaks realtive to each other
+# - phi shifts the function along the x-axis
+# - theta is the stimulus direction
 
-# In[ ]:
+# In[64]:
 
 
 def tuningCurve(counts, dirs, show=True):
@@ -383,38 +403,45 @@ def tuningCurve(counts, dirs, show=True):
 
     Return
     ------
-    p: np.array or list, (4,)
+    popt: np.array or list, (4,)
         parameter vector of tuning curve function
     """
 
     # insert your code here
 
-    # ----------------------------------------
-    # Compute the spike count matrix (0.5 pts)
-    # ----------------------------------------
+    # get spike count
+    matrix = {}
+    for directions in np.unique(dirs):
+        matrix[directions] = counts[dirs == directions]
+    spike_counts_df = pd.DataFrame(matrix)
+    
 
-    # ------------------------------------------------------------
-    # fit the von Mises tuning curve to the spike counts (0.5 pts)
-    # ------------------------------------------------------------
+    # convert to radians
+    
+    popt, pcov = opt.curve_fit(vonMises, dirs, counts, maxfev=100000)
+    
+    x = np.arange(0, 360, 1)
+
+    y = vonMises(x, *popt)
 
     if show == True:
-        # -----------------------------------------------
-        # plot the data and fitted tuning curve (0.5 pts)
-        # -----------------------------------------------
-
         fig, ax = plt.subplots(figsize=(7, 5))
-
-        # the plot should contain both the data and the fitted curve
-        # using seaborn makes this really easy
+        ax.plot(dirs, counts, "o", label="data")
+        ax.plot(x, y, label="fit")
+        ax.set_xlabel("direction (degree)")
+        ax.set_ylabel("spike count")
+        plt.legend()
+        plt.show()
+        plt.close()
 
         return
     else:
-        return p
+        return popt
 
 
 # Plot tuning curve and fit for different neurons. Good candidates to check are 28, 29 or 37. 
 
-# In[ ]:
+# In[53]:
 
 
 def get_data(spikes, neuron):
@@ -443,7 +470,7 @@ def get_data(spikes, neuron):
     return dirs_sorted, counts_sorted
 
 
-# In[ ]:
+# In[65]:
 
 
 # ---------------------------------------------------------
@@ -451,36 +478,41 @@ def get_data(spikes, neuron):
 # ---------------------------------------------------------
 
 dirs, counts = get_data(spikes, 28)
-# add plot
+tuningCurve(counts, dirs, show=True)
 
 
-# In[ ]:
+# In[22]:
 
 
 dirs, counts = get_data(spikes, 29)
+tuningCurve(counts, dirs, show=True)
 # add plot
 
 
-# In[ ]:
+# In[23]:
 
 
 dirs, counts = get_data(spikes, 36)
+tuningCurve(counts, dirs, show=True)
 # add plot
 
 
-# In[ ]:
+# In[24]:
 
 
 dirs, counts = get_data(spikes, 37)
+tuningCurve(counts, dirs, show=True)
 # add plot
 
 
-# In[ ]:
+# In[25]:
 
 
 dirs, counts = get_data(spikes, 32)
+tuningCurve(counts, dirs, show=True)
 # add plot
-
+embed()
+exit()
 
 # ## Task 4: Permutation test for direction tuning
 # 
@@ -495,7 +527,7 @@ dirs, counts = get_data(spikes, 32)
 # *Grading: 3 pts*
 # 
 
-# In[ ]:
+# In[26]:
 
 
 def testTuning(counts, dirs, psi=1, niters=1000, show=False):
@@ -553,7 +585,7 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False):
 
 # Show null distribution for the example cell:
 
-# In[ ]:
+# In[27]:
 
 
 # ------------------------------------------------------------
@@ -564,7 +596,7 @@ dirs, counts = get_data(spikes, 28)
 # add plot
 
 
-# In[ ]:
+# In[28]:
 
 
 dirs, counts = get_data(spikes, 29)
@@ -573,7 +605,7 @@ dirs, counts = get_data(spikes, 29)
 
 # Test all cells for orientation and direction tuning
 
-# In[ ]:
+# In[29]:
 
 
 # -------------------------------------------------------
@@ -585,7 +617,7 @@ dirs, counts = get_data(spikes, 29)
 
 # Number of direction tuned neurons:
 
-# In[ ]:
+# In[30]:
 
 
 # count cells with p > 0.01 (which ones are they?)
@@ -593,7 +625,7 @@ dirs, counts = get_data(spikes, 29)
 
 # Number of orientation tuned neurons:
 
-# In[ ]:
+# In[31]:
 
 
 # count cells with p > 0.01 (which ones are they?)
