@@ -15,15 +15,16 @@
 # 
 # 
 
-# In[9]:
+# In[60]:
 
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as opt
 import scipy.io as io
+from IPython import embed
 
-get_ipython().run_line_magic('matplotlib', 'inline')
+#get_ipython().run_line_magic('matplotlib', 'inline')
 
 plt.style.use("../matplotlib_style.txt")
 
@@ -54,13 +55,30 @@ plt.style.use("../matplotlib_style.txt")
 # ### Calculations
 # _You can add your calculations in_ $\LaTeX$ _here_.
 # 
-# $L(\omega) = \ldots$
+# $$L(\omega) = \log(\prod_t \frac{r_t^{c_t}}{c_t!}\exp(-r_t))$$
+# $$with\: \log(ab) = log(a) + log(b), \: a = \frac{r_t^{c_t}}{c_t!},\: b = \exp(-r_t)$$
+# $$L(\omega) = \sum_t \log(\frac{r_t^{c_t}}{c_t!})+\log(\exp(-r_t))$$
+# $$L(\omega) = \sum_t \log(r_t^{c_t})-\log(c_t!)-r_t$$ 
+# $$with \: r_t = \exp(w^T s_t) \cdot \Delta t \cdot R$$
+# $$ L(\omega) = \sum_t \log(\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t}-\log(c_t!)-\exp(w^T s_t) \cdot \Delta t \cdot R$$
 # 
-# $\frac{dL(\omega)}{d\omega} = \ldots$
+# derivative of $L(\omega)$ with respect to $\omega$ can be devided into three parts:
+# the first part yields:
+# $$\frac{dL(\omega)}{d\omega} = \log(\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t}$$
+# $$\frac{dL(\omega)}{d\omega} = c_t  s_t$$
+# the second part yields:
+# $$\frac{dL(\omega)}{d\omega} = -\log(c_t!)$$
+# $$\frac{dL(\omega)}{d\omega} = 0$$
+# the third part yields:
+# $$\frac{dL(\omega)}{d\omega} = -\exp(w^T s_t) \cdot \Delta t \cdot R$$
+# $$\frac{dL(\omega)}{d\omega} = -s_t \exp(w^T s_t) \cdot \Delta t \cdot R$$
+# combining the three parts yields:
+# $$\frac{dL(\omega)}{d\omega} = \sum_t c_t  s_t -s_t \exp(w^T s_t) \cdot \Delta t \cdot R$$
+# $$\frac{dL(\omega)}{d\omega} = \sum_t s_t (c_t - \exp(w^T s_t) \cdot \Delta t \cdot R)$$
 
 # ### Generate data
 
-# In[8]:
+# In[61]:
 
 
 def gen_gauss_rf(D, width, center=(0,0)):
@@ -82,7 +100,7 @@ ax.imshow(w, cmap='bwr', vmin=-vlim, vmax=vlim)
 ax.set_title('Gaussian RF')
 
 
-# In[3]:
+# In[62]:
 
 
 def sample_lnp(w, nT, dt, R, v):
@@ -124,22 +142,24 @@ def sample_lnp(w, nT, dt, R, v):
 
     See equations in task description above for a precise definition
     of the individual parameters.
+    $$
+    c_t \sim Poisson(r_t)\\
+    r_t = \exp(w^T s_t) \cdot \Delta t \cdot R
+    $$
 
     """
 
     np.random.seed(10)
 
-    # insert your code here
+    stimulus = np.random.normal(0, np.sqrt(v), (w.shape[0], nT))
+    print(np.shape(stimulus))
+    mean_rate = np.exp(w.T @ stimulus) * dt * R
+    spike_counts = np.random.poisson(mean_rate)  
 
-    # ------------------------------------------------
-    # Generate samples from an instantaneous LNP model
-    # neuron with receptive field kernel w. (0.5 pts)
-    # ------------------------------------------------
-
-    return c, r, s
+    return spike_counts, mean_rate , stimulus
 
 
-# In[4]:
+# In[63]:
 
 
 D = 15     # number of pixels
@@ -150,21 +170,32 @@ v = 5      # stimulus variance
 
 w = gen_gauss_rf(D,7,(1,1))
 w = w.flatten()
+print(w.shape)
 
 c, r, s = sample_lnp(w, nT, dt, R, v)
+print(c.shape, r.shape, s.shape,)
+sreshape = s.reshape((D,D,nT))
+print(s.shape)
 
 
 # Plot the responses of the cell.
 
-# In[ ]:
+# In[64]:
 
+
+#get_ipython().run_line_magic('matplotlib', 'qt6')
 
 mosaic = "ABC"
 
 fig, ax = plt.subplot_mosaic(mosaic=mosaic, figsize=(15,4))
-# --------------------------------------
-# Plot the cell's responses (0.5 points)
-# --------------------------------------
+ax["A"].plot(c)
+ax["A"].set_title("Spike counts")
+ax["B"].plot(r)
+ax["B"].set_title("Mean rate")
+
+ax["C"].imshow(sreshape[:,:,0], cmap='bwr')
+ax["C"].set_title("Stimulus frames")
+plt.close()
 
 # plot the stimulus grid only for one frame
 
@@ -173,12 +204,14 @@ fig, ax = plt.subplot_mosaic(mosaic=mosaic, figsize=(15,4))
 # 
 # Before you run your optimizer, make sure the gradient is correct. The helper function `check_grad` in `scipy.optimize` can help you do that. This package also has suitable functions for optimization. If you generate a large number of  samples, the fitted receptive field will look more similar to the true receptive field. With more samples, the optimization takes longer, however.
 
-# In[6]:
+# In[65]:
 
 
 def negloglike_lnp(x, c, s, dt=0.1, R=50):
     '''Implements the negative (!) log-likelihood of the LNP model and its
     gradient with respect to the receptive field w.
+
+    $$ L(\omega) = \sum_t \log(\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t}-\log(c_t!)-\exp(w^T s_t) \cdot \Delta t \cdot R$$
 
     Parameters
     ----------
@@ -202,8 +235,22 @@ def negloglike_lnp(x, c, s, dt=0.1, R=50):
     df: np.array, (Dx * Dy, )
       gradient of the negative log likelihood with respect to x 
     '''
+    # $$ L(\omega) = - \sum_t \log(\exp(x^T s_t) \cdot \Delta t \cdot R)^{c_t}-\log(c_t!)-\exp(x^T s_t) \cdot \Delta t \cdot R$$
+    def L_omega(x, c, s, dt, R):
+        return -np.sum(np.log(np.exp(x.T @ s) * dt * R) ** c - np.log([np.math.factorial(c_single) for c_single in c]) - np.exp(x.T @ s) * dt * R)
 
-    # insert your code here 
+    # implement the gradient of the negative log-likelihood
+    # with respect to the receptive field `x`
+    # $$\frac{dL(\omega)}{d\omega} = \sum_t s_t (c_t - \exp(x^T s_t) \cdot \Delta t \cdot R)$$
+    def dL_omega(x, c, s, dt, R):
+        return np.sum(s * (c - np.exp(x.T @ s) * dt * R), axis=1)
+
+  
+    err = opt.check_grad(L_omega, dL_omega, x, c, s, dt, R)
+    print(err)
+
+    # insert your code here
+    
 
     # ------------------------------------------------
     # Implement the negative log-likelihood of the LNP
@@ -211,8 +258,11 @@ def negloglike_lnp(x, c, s, dt=0.1, R=50):
     # field `w` using the simplified equantions you
     # calculated earlier. (0.5 pts)
     # ------------------------------------------------
+    
 
-    return f, df
+    #return f, df
+
+negloglike_lnp(w, c, s, dt, R)
 
 
 # Fit receptive field maximizing the log likelihood
