@@ -15,20 +15,21 @@
 # 
 # 
 
-# In[1]:
+# In[63]:
 
-from IPython import embed
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as opt
-import scipy.io as io
+import scipy.io as io 
+from IPython import embed
 
 #get_ipython().run_line_magic('matplotlib', 'inline')
 
 plt.style.use("../matplotlib_style.txt")
 
 
-# ## Task 1: Fit RF on simulated data
+ ## Task 1: Fit RF on simulated data
 # 
 # We will start  with toy data generated from an LNP model neuron to make sure everything works right. The model LNP neuron consists of one Gaussian linear filter, an exponential nonlinearity and a Poisson spike count generator. We look at it in discrete time with time bins of width $\delta t$. The model is:
 # 
@@ -75,9 +76,10 @@ plt.style.use("../matplotlib_style.txt")
 # $$\frac{dL(\omega)}{d\omega} = \sum_t c_t  s_t -s_t \exp(w^T s_t) \cdot \Delta t \cdot R$$
 # $$\frac{dL(\omega)}{d\omega} = \sum_t s_t (c_t - \exp(w^T s_t) \cdot \Delta t \cdot R)$$
 
-# ### Generate data
+# 
 
-# In[2]:
+# ### Generate data
+# In[64]:
 
 
 def gen_gauss_rf(D, width, center=(0,0)):
@@ -99,8 +101,7 @@ ax.imshow(w, cmap='bwr', vmin=-vlim, vmax=vlim)
 ax.set_title('Gaussian RF')
 
 
-# In[3]:
-
+# In[65]:
 
 def sample_lnp(w, nT, dt, R, v):
     """Generate samples from an instantaneous LNP model neuron with
@@ -158,11 +159,11 @@ def sample_lnp(w, nT, dt, R, v):
     return spike_counts, mean_rate , stimulus
 
 
-# In[4]:
+# In[66]:
 
 
 D = 15     # number of pixels
-nT = 1000  # number of time bins
+nT = 100000  # number of time bins
 dt = 0.1   # bins of 100 ms
 R = 50     # firing rate in Hz 
 v = 5      # stimulus variance
@@ -179,7 +180,7 @@ print(sreshape.shape)
 
 # Plot the responses of the cell.
 
-# In[5]:
+# In[67]:
 
 
 #get_ipython().run_line_magic('matplotlib', 'qt6')
@@ -202,10 +203,10 @@ ax["C"].set_title("Stimulus frames")
 # 
 # Before you run your optimizer, make sure the gradient is correct. The helper function `check_grad` in `scipy.optimize` can help you do that. This package also has suitable functions for optimization. If you generate a large number of  samples, the fitted receptive field will look more similar to the true receptive field. With more samples, the optimization takes longer, however.
 
-# In[6]:
+# In[68]:
 
 
-def negloglike_lnp(x, c, s, dt=0.1, R=50):
+def L_omega(x, c, s, dt=0.1, R=50):
   '''Implements the negative (!) log-likelihood of the LNP model and its
   gradient with respect to the receptive field w.
 
@@ -229,22 +230,39 @@ def negloglike_lnp(x, c, s, dt=0.1, R=50):
 
   f: float
     function value of the negative log likelihood at x
-  
+
+  '''
+  return - np.sum(np.log((np.exp(x.T @ s) * dt * R) ** c) - np.log([float(np.math.factorial(c_single)) for c_single in c]) - np.exp(x.T @ s) * dt * R)
+
+def dL_omega(x, c, s, dt=0.1, R=50):
+  '''Implements the negative (!) log-likelihood of the LNP model and its
+  gradient with respect to the receptive field w.
+
+  $$ L(\omega) = \sum_t \log(\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t}-\log(c_t!)-\exp(w^T s_t) \cdot \Delta t \cdot R$$
+
+  Parameters
+  ----------
+
+  x: np.array, (Dx * Dy, )
+    current receptive field 
+
+  c: np.array, (nT, )
+    spike counts 
+
+  s: np.array, (Dx * Dy, nT)
+    stimulus matrix
+
+
+  Returns
+  -------
   df: np.array, (Dx * Dy, )
     gradient of the negative log likelihood with respect to x 
   '''
-    
-  # $$ L(\omega) = - \sum_t \log(\exp(x^T s_t) \cdot \Delta t \cdot R)^{c_t}-\log(c_t!)-\exp(x^T s_t) \cdot \Delta t \cdot R$$
-  L_omega = - np.sum(np.log((np.exp(x.T @ s) * dt * R) ** c) - np.log([float(np.math.factorial(c_single)) for c_single in c]) - np.exp(x.T @ s) * dt * R)
-  # implement the gradient of the negative log-likelihood
-  # with respect to the receptive field `x`
-  # $$\frac{dL(\omega)}{d\omega} = \sum_t s_t (c_t - \exp(x^T s_t) \cdot \Delta t \cdot R)$$
-  dL_omega = np.sum(s * (c - np.exp(x.T @ s) * dt * R), axis=1)
-  
-  return L_omega, dL_omega
+  return - np.sum(s * (c - np.exp(x.T @ s) * dt * R), axis=1)
 
-f, df = negloglike_lnp(w, c, s, dt, R)
-print(f, df.shape)
+#f = L_omega(w, c, s, dt, R)
+#df = dL_omega(w, c, s, dt, R)
+#print(f, df.shape)
 
 
 # $$ L(\omega) = \sum_t \log((\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t})-\log(c_t!)-\exp(w^T s_t) \cdot \Delta t \cdot R$$
@@ -253,31 +271,14 @@ print(f, df.shape)
 
 # Fit receptive field maximizing the log likelihood
 
-# In[7]:
+# In[69]:
 
 
-def L_omega(x, c, s, dt, R):
-        return - np.sum(np.log((np.exp(x.T @ s) * dt * R) ** c) - np.log([float(np.math.factorial(c_single)) for c_single in c]) - np.exp(x.T @ s) * dt * R)
-def l_omega2(x, c, s, dt, R):
-        return np.sum(c* (x.T @ s) + np.log(dt)+np.log(R)-np.log([float(np.math.factorial(c_single)) for c_single in c])- np.exp(x.T @ s) * dt * R)
-
-def dL_omega(x, c, s, dt, R):
-        return np.sum(s * (c - np.exp(x.T @ s) * dt * R), axis=1)
-embed()
-exit()
-
-err = opt.check_grad(L_omega, dL_omega, x0=w, args=(c, s, dt, R))
+err = opt.check_grad(L_omega, dL_omega, w, c, s, dt, R)
 print(err)
 
-
-x0 = gen_gauss_rf(D,7,(0,0))
-x0 = x0.flatten()
-err = opt.check_grad(L_omega, dL_omega, x0, c, s, dt, R)
-x0 = np.zeros(D*D)
-print(err)      
-
 # insert your code here 
-res = opt.minimize(L_omega, x0=x0, args=(c, s, dt, R), jac=dL_omega, method='BFGS', options={'disp': True, 'maxiter': 1000})
+res = opt.minimize(L_omega, x0=w, args=(c, s, dt, R), jac=dL_omega, method='SLSQP', options={'disp': True, 'maxiter': 1000})
 print(np.shape(res))
 print(res.x.shape)
 # ------------------------------------------
@@ -291,13 +292,7 @@ print(res.x.shape)
 
 
 
-# In[ ]:
-
-
-
-
-
-# In[8]:
+# In[70]:
 
 
 # insert your code here 
@@ -324,7 +319,6 @@ ax["True"].hlines(np.arange(0, D, 1), xmin=0, xmax=D, color='k', linewidth=0.5)
 ax["Estimated"].vlines(np.arange(0, D, 1), ymin=0, ymax=D, color='k', linewidth=0.5)
 ax["Estimated"].hlines(np.arange(0, D, 1), xmin=0, xmax=D, color='k', linewidth=0.5)
 
-
 ax["True"].imshow(w.reshape((D,D)), cmap='bwr', vmin=-vlim, vmax=vlim)
 ax["True"].set_title("True RF") 
 ax["Estimated"].imshow(res.x.reshape((D,D)), cmap='bwr', vmin=-vlim, vmax=vlim)
@@ -343,7 +337,7 @@ ax["Estimated"].set_title("Estimated RF")
 # *Grading: 2 pts*
 # 
 
-# In[9]:
+# In[78]:
 
 
 var = io.loadmat('../data/nds_cl_5_data.mat')
@@ -356,13 +350,17 @@ trigger = var['DN_triggertimes'].flatten()
 
 # contains the stimulus movie with black and white pixels
 s = var['DN_stim']
+print(s.shape)
 s = s.reshape((300,1500)) # the shape of each frame is (20, 15)
 s = s[:,1:len(trigger)]
+print(s.shape) 
+print(t.shape)
+print(trigger.shape)
 
 
 # Create vector of spike counts
 
-# In[ ]:
+# In[72]:
 
 
 # insert your code here 
@@ -372,10 +370,16 @@ s = s[:,1:len(trigger)]
 # resolution as the stimulus (0.5 pts)
 # ------------------------------------------
 
+spikes = np.zeros((len(trigger)-1)) 
+for i in range(len(trigger)-1):
+        spikes[i] = len(t[(t>=trigger[i]) & (t<trigger[i+1])])
+print(spikes.shape) 
+print(spikes[0:10])
+
 
 # Fit receptive field for each frame separately
 
-# In[ ]:
+# In[80]:
 
 
 # insert your code here 
@@ -389,7 +393,20 @@ s = s[:,1:len(trigger)]
 # ------------------------------------------
 
 # specify the time lags
-delta = [0, 1, 2, 3, 4]
+delta = [0, 1, 2, 3, 4] 
+# intial guess for the receptive field
+w0 = gen_gauss_rf(20, 15, (1,1))
+w0 = w0.flatten()   
+print(w0.shape) 
+
+# first time lag is 0 so we don't need to shift the stimulus 
+w0 = np.zeros(300) 
+
+ll_l = L_omega(w0, spikes, s)
+
+res = opt.minimize(L_omega, x0=w0, args=(spikes, s), jac=dL_omega, method='SLSQP', options={'disp': True, 'maxiter': 1000})
+
+ 
 
 # fit for each delay
 
