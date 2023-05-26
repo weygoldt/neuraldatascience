@@ -15,14 +15,13 @@
 # 
 # 
 
-# In[60]:
+# In[1]:
 
-
+from IPython import embed
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as opt
 import scipy.io as io
-from IPython import embed
 
 #get_ipython().run_line_magic('matplotlib', 'inline')
 
@@ -60,11 +59,11 @@ plt.style.use("../matplotlib_style.txt")
 # $$L(\omega) = \sum_t \log(\frac{r_t^{c_t}}{c_t!})+\log(\exp(-r_t))$$
 # $$L(\omega) = \sum_t \log(r_t^{c_t})-\log(c_t!)-r_t$$ 
 # $$with \: r_t = \exp(w^T s_t) \cdot \Delta t \cdot R$$
-# $$ L(\omega) = \sum_t \log(\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t}-\log(c_t!)-\exp(w^T s_t) \cdot \Delta t \cdot R$$
+# $$ L(\omega) = \sum_t \log((\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t})-\log(c_t!)-\exp(w^T s_t) \cdot \Delta t \cdot R$$
 # 
 # derivative of $L(\omega)$ with respect to $\omega$ can be devided into three parts:
 # the first part yields:
-# $$\frac{dL(\omega)}{d\omega} = \log(\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t}$$
+# $$\frac{dL(\omega)}{d\omega} = \log((\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t})$$
 # $$\frac{dL(\omega)}{d\omega} = c_t  s_t$$
 # the second part yields:
 # $$\frac{dL(\omega)}{d\omega} = -\log(c_t!)$$
@@ -78,7 +77,7 @@ plt.style.use("../matplotlib_style.txt")
 
 # ### Generate data
 
-# In[61]:
+# In[2]:
 
 
 def gen_gauss_rf(D, width, center=(0,0)):
@@ -100,7 +99,7 @@ ax.imshow(w, cmap='bwr', vmin=-vlim, vmax=vlim)
 ax.set_title('Gaussian RF')
 
 
-# In[62]:
+# In[3]:
 
 
 def sample_lnp(w, nT, dt, R, v):
@@ -149,17 +148,17 @@ def sample_lnp(w, nT, dt, R, v):
 
     """
 
-    np.random.seed(10)
-
-    stimulus = np.random.normal(0, np.sqrt(v), (w.shape[0], nT))
-    print(np.shape(stimulus))
+    np.random.seed(10) 
+    stimulus = np.random.choice([0,1], (w.shape[0], nT))
+    stimulus = stimulus * np.sqrt(v)
+    
     mean_rate = np.exp(w.T @ stimulus) * dt * R
     spike_counts = np.random.poisson(mean_rate)  
 
     return spike_counts, mean_rate , stimulus
 
 
-# In[63]:
+# In[4]:
 
 
 D = 15     # number of pixels
@@ -175,12 +174,12 @@ print(w.shape)
 c, r, s = sample_lnp(w, nT, dt, R, v)
 print(c.shape, r.shape, s.shape,)
 sreshape = s.reshape((D,D,nT))
-print(s.shape)
+print(sreshape.shape)
 
 
 # Plot the responses of the cell.
 
-# In[64]:
+# In[5]:
 
 
 #get_ipython().run_line_magic('matplotlib', 'qt6')
@@ -195,7 +194,6 @@ ax["B"].set_title("Mean rate")
 
 ax["C"].imshow(sreshape[:,:,0], cmap='bwr')
 ax["C"].set_title("Stimulus frames")
-plt.close()
 
 # plot the stimulus grid only for one frame
 
@@ -204,74 +202,84 @@ plt.close()
 # 
 # Before you run your optimizer, make sure the gradient is correct. The helper function `check_grad` in `scipy.optimize` can help you do that. This package also has suitable functions for optimization. If you generate a large number of  samples, the fitted receptive field will look more similar to the true receptive field. With more samples, the optimization takes longer, however.
 
-# In[65]:
+# In[6]:
 
 
 def negloglike_lnp(x, c, s, dt=0.1, R=50):
-    '''Implements the negative (!) log-likelihood of the LNP model and its
-    gradient with respect to the receptive field w.
+  '''Implements the negative (!) log-likelihood of the LNP model and its
+  gradient with respect to the receptive field w.
 
-    $$ L(\omega) = \sum_t \log(\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t}-\log(c_t!)-\exp(w^T s_t) \cdot \Delta t \cdot R$$
+  $$ L(\omega) = \sum_t \log(\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t}-\log(c_t!)-\exp(w^T s_t) \cdot \Delta t \cdot R$$
 
-    Parameters
-    ----------
+  Parameters
+  ----------
 
-    x: np.array, (Dx * Dy, )
-      current receptive field 
+  x: np.array, (Dx * Dy, )
+    current receptive field 
 
-    c: np.array, (nT, )
-      spike counts 
+  c: np.array, (nT, )
+    spike counts 
 
-    s: np.array, (Dx * Dy, nT)
-      stimulus matrix
+  s: np.array, (Dx * Dy, nT)
+    stimulus matrix
 
 
-    Returns
-    -------
+  Returns
+  -------
 
-    f: float
-      function value of the negative log likelihood at x
-    
-    df: np.array, (Dx * Dy, )
-      gradient of the negative log likelihood with respect to x 
-    '''
-    # $$ L(\omega) = - \sum_t \log(\exp(x^T s_t) \cdot \Delta t \cdot R)^{c_t}-\log(c_t!)-\exp(x^T s_t) \cdot \Delta t \cdot R$$
-    def L_omega(x, c, s, dt, R):
-        return -np.sum(np.log(np.exp(x.T @ s) * dt * R) ** c - np.log([np.math.factorial(c_single) for c_single in c]) - np.exp(x.T @ s) * dt * R)
-
-    # implement the gradient of the negative log-likelihood
-    # with respect to the receptive field `x`
-    # $$\frac{dL(\omega)}{d\omega} = \sum_t s_t (c_t - \exp(x^T s_t) \cdot \Delta t \cdot R)$$
-    def dL_omega(x, c, s, dt, R):
-        return np.sum(s * (c - np.exp(x.T @ s) * dt * R), axis=1)
-
+  f: float
+    function value of the negative log likelihood at x
   
-    err = opt.check_grad(L_omega, dL_omega, x, c, s, dt, R)
-    print(err)
-
-    # insert your code here
+  df: np.array, (Dx * Dy, )
+    gradient of the negative log likelihood with respect to x 
+  '''
     
+  # $$ L(\omega) = - \sum_t \log(\exp(x^T s_t) \cdot \Delta t \cdot R)^{c_t}-\log(c_t!)-\exp(x^T s_t) \cdot \Delta t \cdot R$$
+  L_omega = - np.sum(np.log((np.exp(x.T @ s) * dt * R) ** c) - np.log([float(np.math.factorial(c_single)) for c_single in c]) - np.exp(x.T @ s) * dt * R)
+  # implement the gradient of the negative log-likelihood
+  # with respect to the receptive field `x`
+  # $$\frac{dL(\omega)}{d\omega} = \sum_t s_t (c_t - \exp(x^T s_t) \cdot \Delta t \cdot R)$$
+  dL_omega = np.sum(s * (c - np.exp(x.T @ s) * dt * R), axis=1)
+  
+  return L_omega, dL_omega
 
-    # ------------------------------------------------
-    # Implement the negative log-likelihood of the LNP
-    # and its gradient with respect to the receptive
-    # field `w` using the simplified equantions you
-    # calculated earlier. (0.5 pts)
-    # ------------------------------------------------
-    
+f, df = negloglike_lnp(w, c, s, dt, R)
+print(f, df.shape)
 
-    #return f, df
 
-negloglike_lnp(w, c, s, dt, R)
-
+# $$ L(\omega) = \sum_t \log((\exp(w^T s_t) \cdot \Delta t \cdot R)^{c_t})-\log(c_t!)-\exp(w^T s_t) \cdot \Delta t \cdot R$$
+# $$\frac{dL(\omega)}{d\omega} = \sum_t s_t (c_t - \exp(w^T s_t) \cdot \Delta t \cdot R)$$
+# 
 
 # Fit receptive field maximizing the log likelihood
 
 # In[7]:
 
 
-# insert your code here 
+def L_omega(x, c, s, dt, R):
+        return - np.sum(np.log((np.exp(x.T @ s) * dt * R) ** c) - np.log([float(np.math.factorial(c_single)) for c_single in c]) - np.exp(x.T @ s) * dt * R)
+def l_omega2(x, c, s, dt, R):
+        return np.sum(c* (x.T @ s) + np.log(dt)+np.log(R)-np.log([float(np.math.factorial(c_single)) for c_single in c])- np.exp(x.T @ s) * dt * R)
 
+def dL_omega(x, c, s, dt, R):
+        return np.sum(s * (c - np.exp(x.T @ s) * dt * R), axis=1)
+embed()
+exit()
+
+err = opt.check_grad(L_omega, dL_omega, x0=w, args=(c, s, dt, R))
+print(err)
+
+
+x0 = gen_gauss_rf(D,7,(0,0))
+x0 = x0.flatten()
+err = opt.check_grad(L_omega, dL_omega, x0, c, s, dt, R)
+x0 = np.zeros(D*D)
+print(err)      
+
+# insert your code here 
+res = opt.minimize(L_omega, x0=x0, args=(c, s, dt, R), jac=dL_omega, method='BFGS', options={'disp': True, 'maxiter': 1000})
+print(np.shape(res))
+print(res.x.shape)
 # ------------------------------------------
 # Estimate the receptive field by maximizing
 # the log-likelihood (or more commonly, 
@@ -281,7 +289,15 @@ negloglike_lnp(w, c, s, dt, R)
 # ------------------------------------------
 
 
+
+
 # In[ ]:
+
+
+
+
+
+# In[8]:
 
 
 # insert your code here 
@@ -290,10 +306,29 @@ negloglike_lnp(w, c, s, dt, R)
 # Plot the ground truth and estimated 
 # `w` side by side. (0.5 pts)
 # ------------------------------------
-
+vlim = np.max(np.abs(w))
 mosaic = [["True", "Estimated"]]
-fig, ax = plt.subplot_mosaic(mosaic=mosaic, figsize=(12,5))
+fig, ax = plt.subplot_mosaic(mosaic=mosaic, figsize=(12,5), sharey=True,)
+# plot grid
+ax["True"].set_xticks(np.arange(0, D, 1))
+ax["True"].set_yticks(np.arange(0, D, 1))
+ax["Estimated"].set_xticks(np.arange(0, D, 1))
+ax["Estimated"].set_yticks(np.arange(0, D, 1))
+ax["True"].set_xlabel("x")
+ax["True"].set_ylabel("y")
+ax["Estimated"].set_xlabel("x")
+ax["Estimated"].set_ylabel("y")
+# plot vlines and hlines
+ax["True"].vlines(np.arange(0, D, 1), ymin=0, ymax=D, color='k', linewidth=0.5)
+ax["True"].hlines(np.arange(0, D, 1), xmin=0, xmax=D, color='k', linewidth=0.5)
+ax["Estimated"].vlines(np.arange(0, D, 1), ymin=0, ymax=D, color='k', linewidth=0.5)
+ax["Estimated"].hlines(np.arange(0, D, 1), xmin=0, xmax=D, color='k', linewidth=0.5)
 
+
+ax["True"].imshow(w.reshape((D,D)), cmap='bwr', vmin=-vlim, vmax=vlim)
+ax["True"].set_title("True RF") 
+ax["Estimated"].imshow(res.x.reshape((D,D)), cmap='bwr', vmin=-vlim, vmax=vlim)
+ax["Estimated"].set_title("Estimated RF")
 # make sure to add a colorbar. 'bwr' is a reasonable choice for the cmap.
 
 
@@ -327,7 +362,7 @@ s = s[:,1:len(trigger)]
 
 # Create vector of spike counts
 
-# In[10]:
+# In[ ]:
 
 
 # insert your code here 
@@ -340,7 +375,7 @@ s = s[:,1:len(trigger)]
 
 # Fit receptive field for each frame separately
 
-# In[11]:
+# In[ ]:
 
 
 # insert your code here 
@@ -428,7 +463,7 @@ fig, ax = plt.subplot_mosaic(mosaic=[['Spatial', 'Temporal']], figsize=(10,4), c
 # *Grading: 2 pts*
 # 
 
-# In[14]:
+# In[ ]:
 
 
 from sklearn import linear_model
