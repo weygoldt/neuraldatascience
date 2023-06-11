@@ -122,7 +122,7 @@ trainigs_dataset = util.dataset(
     seed=seed,
 )
 
-
+embed()
 # In[17]:
 
 
