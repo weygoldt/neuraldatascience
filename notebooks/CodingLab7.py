@@ -26,13 +26,14 @@ import matplotlib.pyplot as plt
 # We recommend using openTSNE for experiments with t-SNE
 # https://github.com/pavlin-policar/openTSNE
 from openTSNE import TSNE
+from IPython import embed
 
-get_ipython().run_line_magic('matplotlib', 'inline')
+# get_ipython().run_line_magic('matplotlib', 'inline')
 
-get_ipython().run_line_magic('load_ext', 'jupyter_black')
+# get_ipython().run_line_magic('load_ext', 'jupyter_black')
 
-get_ipython().run_line_magic('load_ext', 'watermark')
-get_ipython().run_line_magic('watermark', '--time --date --timezone --updated --python --iversions --watermark -p sklearn')
+# get_ipython().run_line_magic('load_ext', 'watermark')
+# get_ipython().run_line_magic('watermark', '--time --date --timezone --updated --python --iversions --watermark -p sklearn')
 
 
 # In[81]:
