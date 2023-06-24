@@ -2,5 +2,22 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
-    "python.formatting.provider": "none"
+    "python.formatting.provider": "none",
+    "audioCues.noInlayHints": "off",
+    "audioCues.notebookCellCompleted": "off",
+    "audioCues.notebookCellFailed": "off",
+    "audioCues.onDebugBreak": "off",
+    "audioCues.taskFailed": "off",
+    "audioCues.taskCompleted": "off",
+    "audioCues.terminalCommandFailed": "off",
+    "audioCues.terminalQuickFix": "off",
+    "liveshare.accessibility.soundVolume": 0,
+    "liveshare.accessibility.soundsEnabled": false,
+    "audioCues.lineHasInlineSuggestion": "off",
+    "audioCues.diffLineDeleted": "off",
+    "audioCues.diffLineInserted": "off",
+    "audioCues.diffLineModified": "off",
+    "audioCues.lineHasBreakpoint": "off",
+    "audioCues.lineHasError": "off",
+    "audioCues.lineHasFoldedArea": "off"
 }
