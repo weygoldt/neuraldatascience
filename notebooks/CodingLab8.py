@@ -215,7 +215,6 @@ def entropy_cae(phat, n):
     H: float
         Entropy estimate
     """
-    embed()
     # insert your code here (1 pt)
     # calulate singletons in phat
     unique, counts = np.unique(phat, return_counts=True)
@@ -224,12 +223,13 @@ def entropy_cae(phat, n):
     if singletons.size == 0:
         singletons = 0
     else:
-        singletons = np.sum(np.ones(singletons.shape))
+        embed()
+        singletons = np.sum(counts==1)
     C = 1 - (singletons) / n
     PC = phat * C
     print(PC)
     PCs = [p * np.log2(p) if p != 0 else 0 for p in PC]
-    H = -np.sum(PCs / (1 - ((1 - PC) ** n)))
+    H = -np.nansum(PCs / (1 - ((1 - PC) ** n)))
     return H
 
 
