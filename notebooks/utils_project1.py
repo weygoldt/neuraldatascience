@@ -1,6 +1,7 @@
 import scipy.optimize as opt
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def vonMises(theta, alpha, kappa, nu, phi):
@@ -103,3 +104,82 @@ def get_spike_counts_per_orientation(data, spike_data, roi):
     counts = np.array(counts)[idx]
 
     return dirs, counts
+
+
+def testTuning(counts, dirs, psi=1, niters=1000, show=False):
+    """Plot the data if show is True, otherwise just return the fit.
+
+    Parameters
+    ----------
+
+    counts: np.array, shape=(total_n_trials, )
+        the spike count during the stimulation period
+
+    dirs: np.array, shape=(total_n_trials, )
+        the stimulus direction in degrees
+
+    psi: int
+        fourier component to test (1 = direction, 2 = orientation)
+
+    niters: int
+        Number of iterations / permutation
+
+    show: bool
+        Plot or not.
+
+    Returns
+    -------
+    p: float
+        p-value
+    q: float
+        magnitude of second Fourier component
+
+    qdistr: np.array
+        sampling distribution of |q| under the null hypothesis
+
+    """
+    np.random.seed(42)
+    dirs_unique = np.unique(dirs)
+    means = np.zeros(len(dirs_unique))
+    for d, directions in enumerate(np.unique(dirs)):
+        means[d] = np.mean(counts[dirs == directions])
+
+    # imaginary exponential function mu
+    dirs_unique_rad = np.deg2rad(dirs_unique)
+
+    nu = np.exp((1j * psi * dirs_unique_rad) * (2 * np.pi))
+
+    q = means @ nu
+    abs_q = np.absolute(q)
+
+    counts_shuffle = np.array(counts)
+    qs_shuffle = np.zeros(niters)
+    valid_counter = 0
+
+    for i in range(niters):
+        np.random.shuffle(counts_shuffle)
+        means = np.zeros(len(dirs_unique))
+        for d, directions in enumerate(np.unique(dirs)):
+            means[d] = np.mean(counts_shuffle[dirs == directions])
+
+        q_shuffle = means @ nu
+        abs_q_shuffle = np.absolute(q_shuffle)
+        qs_shuffle[i] = abs_q_shuffle
+
+        if abs_q_shuffle > abs_q:
+            valid_counter += 1
+
+    p = valid_counter / niters
+    # print(p)
+
+    if show == True:
+        fig, ax = plt.subplots(figsize=(7, 4))
+
+        sns.histplot(qs_shuffle, bins=100, stat="proportion", ax=ax, label="null")
+        ax.axvline(abs_q, color="red", label="observed")
+        ax.set_xlabel("|q|")
+        ax.set_ylabel("Fraction of Runs")
+
+        # you can use sns.histplot for the histogram
+    else:
+        return p, abs_q, qs_shuffle
