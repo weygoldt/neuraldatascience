@@ -29,10 +29,6 @@ def vonMises(theta, alpha, kappa, nu, phi):
         alpha + kappa * (np.cos(2 * (theta - phi)) - 1) + nu * (np.cos(theta - phi) - 1)
     )
 
-    # -----------------------------------
-    # Implement the Mises model (0.5 pts)
-    # -----------------------------------
-
     return f
 
 
@@ -150,8 +146,11 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False):
     nu = np.exp((1j * psi * dirs_unique_rad) * (2 * np.pi))
 
     q = means @ nu
-    abs_q = np.absolute(q)
+    if q.imag != 0:
+        print("Warning: q is not real")
+        
 
+    abs_q = np.absolute(q)
     counts_shuffle = np.array(counts)
     qs_shuffle = np.zeros(niters)
     valid_counter = 0
