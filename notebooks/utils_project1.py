@@ -146,11 +146,10 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False):
     nu = np.exp((1j * psi * dirs_unique_rad) * (2 * np.pi))
 
     q = means @ nu
-    if q.imag != 0:
-        print("Warning: q is not real")
-        
 
     abs_q = np.absolute(q)
+    if abs_q == 0:
+        return 1, abs_q, np.array([0.0] * niters)
     counts_shuffle = np.array(counts)
     qs_shuffle = np.zeros(niters)
     valid_counter = 0
