@@ -102,7 +102,7 @@ def get_spike_counts_per_orientation(data, spike_data, roi):
     return dirs, counts
 
 
-def testTuning(counts, dirs, psi=1, niters=1000, show=False):
+def testTuning(counts, dirs, psi=1, niters=1000, show=False, title_name=""):
     """Plot the data if show is True, otherwise just return the fit.
 
     Parameters
@@ -177,6 +177,8 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False):
         ax.axvline(abs_q, color="red", label="observed")
         ax.set_xlabel("|q|")
         ax.set_ylabel("Fraction of Runs")
+        ax.legend()
+        ax.set_title(f"{title_name}")
 
         # you can use sns.histplot for the histogram
     else:
