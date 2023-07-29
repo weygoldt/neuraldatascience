@@ -70,7 +70,7 @@ def tuningCurve(counts, dirs, show=True):
 
     y = vonMises(x, *popt)
 
-    if show == True:
+    if show is True:
         fig, ax = plt.subplots(figsize=(7, 5))
         ax.plot(dirs, counts, "o", label="data")
         ax.plot(x, y, label="fit")
@@ -88,6 +88,25 @@ def get_spike_counts_per_orientation(data, spike_data, roi):
     dirs = []
     counts = []
     for i, row in enumerate(data["stim_table"].iterrows()):
+        ori = row[1]["orientation"]
+        if np.isnan(ori):
+            continue
+        dirs.append(ori)
+        start_times = row[1]["start"].astype(int)
+        end_times = row[1]["end"].astype(int)
+        counts.append(spike_data[roi, start_times:end_times].sum())
+    idx = np.argsort(dirs)
+    dirs = np.array(dirs)[idx]
+    counts = np.array(counts)[idx]
+
+    return dirs, counts
+
+
+def get_spike_counts_per_orientation_temporalfreq(data, spike_data, roi, temporal_freq):
+    # spike count for one roi for each orientation
+    dirs = []
+    counts = []
+    for i, row in enumerate(data["stim_table"][data["stim_table"]["temporal_frequency"]==temporal_freq].iterrows()):
         ori = row[1]["orientation"]
         if np.isnan(ori):
             continue
@@ -170,7 +189,7 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False, title_name=""):
     p = valid_counter / niters
     # print(p)
 
-    if show == True:
+    if show is True:
         fig, ax = plt.subplots(figsize=(7, 4))
 
         sns.histplot(qs_shuffle, bins=100, stat="proportion", ax=ax, label="null")
