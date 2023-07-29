@@ -1,6 +1,6 @@
-import scipy.optimize as opt
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy.optimize as opt
 import seaborn as sns
 
 
@@ -106,7 +106,11 @@ def get_spike_counts_per_orientation_temporalfreq(data, spike_data, roi, tempora
     # spike count for one roi for each orientation
     dirs = []
     counts = []
-    for i, row in enumerate(data["stim_table"][data["stim_table"]["temporal_frequency"]==temporal_freq].iterrows()):
+    for i, row in enumerate(
+        data["stim_table"][
+            data["stim_table"]["temporal_frequency"] == temporal_freq
+        ].iterrows()
+    ):
         ori = row[1]["orientation"]
         if np.isnan(ori):
             continue
@@ -191,7 +195,6 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False, title_name=""):
 
     if show is True:
         fig, ax = plt.subplots(figsize=(7, 4))
-
         sns.histplot(qs_shuffle, bins=100, stat="proportion", ax=ax, label="null")
         ax.axvline(abs_q, color="red", label="observed")
         ax.set_xlabel("|q|")
@@ -202,3 +205,128 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False, title_name=""):
         # you can use sns.histplot for the histogram
     else:
         return p, abs_q, qs_shuffle
+
+
+def dff_orientation(data: dict):
+    """Calculate the mean/std dff for each orientation for each roi.
+
+    Parameters
+    ----------
+    data : dict
+        The data dictionary. See `load_data` for details.
+
+    Returns
+    -------
+    mean_calcium_orientation : np.ndarray (n_rois, n_orientations)
+        The mean dff for each orientation for each roi.
+    std_calcium_orientation : np.ndarray (n_rois, n_orientations)
+        The standard deviation of the dff for each orientation for each roi.
+    """
+
+    orientations = data["stim_table"]["orientation"].unique()
+    orientations = orientations[~np.isnan(orientations)]
+    mean_calcium_orientation = np.zeros((data["dff"].shape[0], len(orientations)))
+    std_calcium_orientation = np.zeros((data["dff"].shape[0], len(orientations)))
+
+    for i, orientation in enumerate(np.sort(orientations)):
+        # define the start and end times for each orientation
+        start_times = (
+            data["stim_table"]["start"][
+                data["stim_table"]["orientation"] == orientation
+            ]
+            .to_numpy()
+            .astype(int)
+        )
+        end_times = (
+            data["stim_table"]["end"][data["stim_table"]["orientation"] == orientation]
+            .to_numpy()
+            .astype(int)
+        )
+
+        for roi in range(data["dff"].shape[0]):
+            # calculate the mean dff for each orientation for each roi
+            mean_calcium_orientation[roi, i] = np.mean(
+                [
+                    np.mean(data["dff"][roi, s:e])
+                    for s, e in zip(start_times, end_times)
+                ],
+                axis=0,
+            )
+            # calculate the std dff for each orientation for each roi
+            std_calcium_orientation[roi, i] = np.std(
+                [
+                    np.mean(data["dff"][roi, s:e])
+                    for s, e in zip(start_times, end_times)
+                ],
+                axis=0,
+            )
+    return mean_calcium_orientation, std_calcium_orientation
+
+
+def dff_orientation_temporal_frequency(data:dict):
+    """Calculate the mean/std dff for each orientation for each roi with respect to
+    the temporal frequency.
+    
+    Parameters
+    ----------
+    data : dict
+        The data dictionary. See `load_data` for details.
+        
+    Returns
+    -------
+    mean_calcium_orientation : np.ndarray (n_rois, n_orientations, n_temporal_frequencies)
+        The mean dff for each orientation and temporal frequency for each roi.
+    std_calcium_orientation : np.ndarray (n_rois, n_orientations, n_temporal_frequencies)
+        The standard deviation of the dff for each orientation and temporal frequency
+            for each roi.
+        """
+
+    # get the unique orientations and temporal frequencies
+    orientations = data["stim_table"]["orientation"].unique()
+    orientations = np.sort(orientations[~np.isnan(orientations)])
+    temporal_frequencies = data["stim_table"]["temporal_frequency"].unique()
+    temporal_frequencies = np.sort(temporal_frequencies[~np.isnan(temporal_frequencies)])
+
+    mean_calcium_orientation = np.zeros(
+        (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
+    )
+    std_calcium_orientation = np.zeros(
+        (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
+    )
+
+    for i, orientation in enumerate(orientations):
+        for j, freq in enumerate(temporal_frequencies):
+            start_times = (
+                data["stim_table"]["start"][
+                    (data["stim_table"]["orientation"] == orientation)
+                    & (data["stim_table"]["temporal_frequency"] == freq)
+                ]
+                .to_numpy()
+                .astype(int)
+            )
+            end_times = (
+                data["stim_table"]["end"][
+                    (data["stim_table"]["orientation"] == orientation)
+                    & (data["stim_table"]["temporal_frequency"] == freq)
+                ]
+                .to_numpy()
+                .astype(int)
+            )
+            for roi in range(data["dff"].shape[0]):
+
+                mean_calcium_orientation[roi, i, j] = np.mean(
+                    [
+                        np.mean(data["dff"][roi, s:e])
+                        for s, e in zip(start_times, end_times)
+                    ],
+                    axis=0,
+                )
+                std_calcium_orientation[roi, i, j] = np.std(
+                    [
+                        np.mean(data["dff"][roi, s:e])
+                        for s, e in zip(start_times, end_times)
+                    ],
+                    axis=0,
+                )
+    return mean_calcium_orientation, std_calcium_orientation
+
