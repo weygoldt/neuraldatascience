@@ -32,7 +32,7 @@ def vonMises(theta, alpha, kappa, nu, phi):
     return f
 
 
-def tuningCurve(counts, dirs, show=True):
+def tuningCurve(counts, dirs, show=True, tile_name=""):
     """Fit a von Mises tuning curve to the spike counts in count with direction dir using a least-squares fit.
 
     Parameters
@@ -59,12 +59,12 @@ def tuningCurve(counts, dirs, show=True):
     lower_bounds = (0, 0, 0, 0)
     bounds = (lower_bounds, upper_bounds)
 
-    # try:
-    #     popt, pcov = opt.curve_fit(vonMises, dirs, counts, maxfev=1000)
-    # except RuntimeError:
-    popt, pcov = opt.curve_fit(
-        vonMises, dirs, counts, maxfev=1000000, bounds=bounds, method="trf"
-    )
+    try:
+        popt, pcov = opt.curve_fit(vonMises, dirs, counts, maxfev=1000)
+    except RuntimeError:
+        popt, pcov = opt.curve_fit(
+            vonMises, dirs, counts, maxfev=1000000, bounds=bounds, method="trf"
+        )
 
     x = np.arange(0, 360, 1)
 
@@ -76,9 +76,8 @@ def tuningCurve(counts, dirs, show=True):
         ax.plot(x, y, label="fit")
         ax.set_xlabel("Direction (degree)")
         ax.set_ylabel("Spike Count")
+        ax.set_title(tile_name)
         plt.legend()
-
-        return
     else:
         return popt
 
