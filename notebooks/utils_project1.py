@@ -52,6 +52,10 @@ def tuningCurve(counts, dirs, show=True, tile_name=""):
     ------
     popt: np.array or list, (4,)
         parameter vector of tuning curve function
+    x: np.array, shape=(360, )
+        x-axis for plotting
+    y: np.array, shape=(360, )
+        y-axis for plotting
     """
 
     # insert your code here
@@ -69,6 +73,8 @@ def tuningCurve(counts, dirs, show=True, tile_name=""):
     x = np.arange(0, 360, 1)
 
     y = vonMises(x, *popt)
+    if y.max() > 100:
+        return None, None, None
 
     if show is True:
         fig, ax = plt.subplots(figsize=(7, 5))
@@ -78,8 +84,9 @@ def tuningCurve(counts, dirs, show=True, tile_name=""):
         ax.set_ylabel("Spike Count")
         ax.set_title(tile_name)
         plt.legend()
+
     else:
-        return popt
+        return popt, x, y
 
 
 def get_spike_counts_per_orientation(data, spike_data, roi):
@@ -400,12 +407,16 @@ def spike_orientation_median(data: dict, spike_data, q):
         spike_orientation_percentile_5,
         spike_orientation_percentile_95,
     )
+
+
 def spike_orientation_mean_temporal(data: dict, spike_data):
     # mean calcium value for each orientation
     orientations = data["stim_table"]["orientation"].unique()
     orientations = np.sort(orientations[~np.isnan(orientations)])
     temporal_frequencies = data["stim_table"]["temporal_frequency"].unique()
-    temporal_frequencies = np.sort(temporal_frequencies[~np.isnan(temporal_frequencies)])
+    temporal_frequencies = np.sort(
+        temporal_frequencies[~np.isnan(temporal_frequencies)]
+    )
 
     mean_spike_orientation_freq = np.zeros(
         (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
@@ -433,31 +444,35 @@ def spike_orientation_mean_temporal(data: dict, spike_data):
             )
             for roi in range(data["dff"].shape[0]):
                 mean_spike_orientation_freq[roi, i, j] = np.mean(
-                    [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                    [
+                        np.sum(spike_data[roi][s:e])
+                        for s, e in zip(start_times, end_times)
+                    ],
                     axis=0,
                 )
                 std_spike_orientation_freq[roi, i, j] = np.std(
-                    [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                    [
+                        np.sum(spike_data[roi][s:e])
+                        for s, e in zip(start_times, end_times)
+                    ],
                     axis=0,
                 )
     return mean_spike_orientation_freq, std_spike_orientation_freq
 
-def spike_orientation_temporal_median(data: dict, spike_data, q):
 
+def spike_orientation_temporal_median(data: dict, spike_data, q):
     orientations = data["stim_table"]["orientation"].unique()
     orientations = np.sort(orientations[~np.isnan(orientations)])
     temporal_frequencies = data["stim_table"]["temporal_frequency"].unique()
-    temporal_frequencies = np.sort(temporal_frequencies[~np.isnan(temporal_frequencies)])
+    temporal_frequencies = np.sort(
+        temporal_frequencies[~np.isnan(temporal_frequencies)]
+    )
 
     median_spike_orientation_freq = np.zeros(
         (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
     )
-    q95 = np.zeros(
-        (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
-    )
-    q5 = np.zeros(  
-        (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
-    )
+    q95 = np.zeros((data["dff"].shape[0], len(orientations), len(temporal_frequencies)))
+    q5 = np.zeros((data["dff"].shape[0], len(orientations), len(temporal_frequencies)))
 
     for i, orientation in enumerate(orientations):
         for j, freq in enumerate(temporal_frequencies):
@@ -479,11 +494,17 @@ def spike_orientation_temporal_median(data: dict, spike_data, q):
             )
             for roi in range(data["dff"].shape[0]):
                 median_spike_orientation_freq[roi, i, j] = np.mean(
-                    [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                    [
+                        np.sum(spike_data[roi][s:e])
+                        for s, e in zip(start_times, end_times)
+                    ],
                     axis=0,
                 )
                 percentiles = np.percentile(
-                    [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                    [
+                        np.sum(spike_data[roi][s:e])
+                        for s, e in zip(start_times, end_times)
+                    ],
                     axis=0,
                     q=q,
                 )
@@ -491,7 +512,6 @@ def spike_orientation_temporal_median(data: dict, spike_data, q):
                 q95[roi, i, j] = percentiles[1]
 
     return median_spike_orientation_freq, q5, q95
-
 
 
 # smooth function for the spike data
