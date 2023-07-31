@@ -1,8 +1,9 @@
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as opt
 import seaborn as sns
-import os
+
 
 def vonMises(theta, alpha, kappa, nu, phi):
     """Evaluate the parametric von Mises tuning curve with parameters p at locations theta.
@@ -191,7 +192,6 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False, title_name=""):
             valid_counter += 1
 
     p = valid_counter / niters
-    # print(p)
 
     if show is True:
         fig, ax = plt.subplots(figsize=(7, 4))
@@ -330,3 +330,40 @@ def dff_orientation_temporal_frequency(data:dict):
                 )
     return mean_calcium_orientation, std_calcium_orientation
 
+
+# smooth function for the spike data
+def smooth_rate(data, instant_firing_rate, window):
+    """
+    Smooth the firing rate by taking the average of the firing rate over a window.
+    
+    Parameters
+    ----------
+    data : dict
+        The data dictionary. See `load_data` for details.
+    instant_firing_rate : np.ndarray (n_orientations, n_timepoints)
+        The instantaneous firing rate for each orientation for each roi.
+    window : int
+        The size of the window to smooth over.
+    
+    Returns
+    -------
+    smoothed_rate : np.ndarray (n_orientations, n_timepoints)
+        The smoothed firing rate for each orientation for each roi.
+    """
+    smoothed_rate = np.empty((len(instant_firing_rate), len(instant_firing_rate[0])))
+    smoothed_rate.fill(np.nan)
+    step_size = int(np.floor(window / 2))
+    length = np.arange(
+        (window - step_size), len(instant_firing_rate[0]) - step_size + 1
+    )
+    orientations = data["stim_table"]["orientation"].unique()
+    orientations = np.sort(orientations[~np.isnan(orientations)])
+
+    for i in range(len(instant_firing_rate)):
+        # print(f"i = {i}")
+        for j in range(len(length)):
+            # print(f"j = {j}")
+            smoothed_rate[i, j] = np.nanmean(
+                instant_firing_rate[orientations[i]][(j - step_size) : (j + step_size)]
+            )
+    return smoothed_rate
