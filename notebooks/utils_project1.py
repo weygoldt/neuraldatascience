@@ -366,7 +366,10 @@ def spike_orientation_median(data: dict, spike_data):
     orientations = data["stim_table"]["orientation"].unique()
     orientations = orientations[~np.isnan(orientations)]
     median_spike_orientation = np.zeros((data["dff"].shape[0], len(orientations)))
-    spike_orientation_percent = np.zeros((data["dff"].shape[0], len(orientations)))
+    spike_orientation_percentile_95 = np.zeros(
+        (data["dff"].shape[0], len(orientations))
+    )
+    spike_orientation_percentile_5 = np.zeros((data["dff"].shape[0], len(orientations)))
 
     for i, orientation in enumerate(np.sort(orientations)):
         start_times = (
@@ -386,12 +389,18 @@ def spike_orientation_median(data: dict, spike_data):
                 [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
                 axis=0,
             )
-            spike_orientation_percent[roi, i] = np.percentile(
+            percentiles = np.percentile(
                 [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
                 axis=0,
                 q=(5, 95),
             )
-    return median_spike_orientation, spike_orientation_percent
+            spike_orientation_percentile_5[roi, i] = percentiles[0]
+            spike_orientation_percentile_95[roi, i] = percentiles[1]
+    return (
+        median_spike_orientation,
+        spike_orientation_percentile_5,
+        spike_orientation_percentile_95,
+    )
 
 
 # smooth function for the spike data
