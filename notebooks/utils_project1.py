@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as opt
@@ -263,15 +262,15 @@ def dff_orientation(data: dict):
     return mean_calcium_orientation, std_calcium_orientation
 
 
-def dff_orientation_temporal_frequency(data:dict):
+def dff_orientation_temporal_frequency(data: dict):
     """Calculate the mean/std dff for each orientation for each roi with respect to
     the temporal frequency.
-    
+
     Parameters
     ----------
     data : dict
         The data dictionary. See `load_data` for details.
-        
+
     Returns
     -------
     mean_calcium_orientation : np.ndarray (n_rois, n_orientations, n_temporal_frequencies)
@@ -279,13 +278,15 @@ def dff_orientation_temporal_frequency(data:dict):
     std_calcium_orientation : np.ndarray (n_rois, n_orientations, n_temporal_frequencies)
         The standard deviation of the dff for each orientation and temporal frequency
             for each roi.
-        """
+    """
 
     # get the unique orientations and temporal frequencies
     orientations = data["stim_table"]["orientation"].unique()
     orientations = np.sort(orientations[~np.isnan(orientations)])
     temporal_frequencies = data["stim_table"]["temporal_frequency"].unique()
-    temporal_frequencies = np.sort(temporal_frequencies[~np.isnan(temporal_frequencies)])
+    temporal_frequencies = np.sort(
+        temporal_frequencies[~np.isnan(temporal_frequencies)]
+    )
 
     mean_calcium_orientation = np.zeros(
         (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
@@ -313,7 +314,6 @@ def dff_orientation_temporal_frequency(data:dict):
                 .astype(int)
             )
             for roi in range(data["dff"].shape[0]):
-
                 mean_calcium_orientation[roi, i, j] = np.mean(
                     [
                         np.mean(data["dff"][roi, s:e])
@@ -331,11 +331,74 @@ def dff_orientation_temporal_frequency(data:dict):
     return mean_calcium_orientation, std_calcium_orientation
 
 
+def spike_orientation_mean(data: dict, spike_data):
+    orientations = data["stim_table"]["orientation"].unique()
+    orientations = orientations[~np.isnan(orientations)]
+    mean_spike_orientation = np.zeros((data["dff"].shape[0], len(orientations)))
+    std_spike_orientation = np.zeros((data["dff"].shape[0], len(orientations)))
+
+    for i, orientation in enumerate(np.sort(orientations)):
+        start_times = (
+            data["stim_table"]["start"][
+                data["stim_table"]["orientation"] == orientation
+            ]
+            .to_numpy()
+            .astype(int)
+        )
+        end_times = (
+            data["stim_table"]["end"][data["stim_table"]["orientation"] == orientation]
+            .to_numpy()
+            .astype(int)
+        )
+        for roi in range(data["dff"].shape[0]):
+            mean_spike_orientation[roi, i] = np.mean(
+                [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                axis=0,
+            )
+            std_spike_orientation[roi, i] = np.std(
+                [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                axis=0,
+            )
+    return mean_spike_orientation, std_spike_orientation
+
+
+def spike_orientation_median(data: dict, spike_data):
+    orientations = data["stim_table"]["orientation"].unique()
+    orientations = orientations[~np.isnan(orientations)]
+    median_spike_orientation = np.zeros((data["dff"].shape[0], len(orientations)))
+    spike_orientation_percent = np.zeros((data["dff"].shape[0], len(orientations)))
+
+    for i, orientation in enumerate(np.sort(orientations)):
+        start_times = (
+            data["stim_table"]["start"][
+                data["stim_table"]["orientation"] == orientation
+            ]
+            .to_numpy()
+            .astype(int)
+        )
+        end_times = (
+            data["stim_table"]["end"][data["stim_table"]["orientation"] == orientation]
+            .to_numpy()
+            .astype(int)
+        )
+        for roi in range(data["dff"].shape[0]):
+            median_spike_orientation[roi, i] = np.median(
+                [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                axis=0,
+            )
+            spike_orientation_percent[roi, i] = np.percentile(
+                [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                axis=0,
+                q=(5, 95),
+            )
+    return median_spike_orientation, spike_orientation_percent
+
+
 # smooth function for the spike data
 def smooth_rate(data, instant_firing_rate, window):
     """
     Smooth the firing rate by taking the average of the firing rate over a window.
-    
+
     Parameters
     ----------
     data : dict
@@ -344,7 +407,7 @@ def smooth_rate(data, instant_firing_rate, window):
         The instantaneous firing rate for each orientation for each roi.
     window : int
         The size of the window to smooth over.
-    
+
     Returns
     -------
     smoothed_rate : np.ndarray (n_orientations, n_timepoints)
