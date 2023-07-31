@@ -362,7 +362,7 @@ def spike_orientation_mean(data: dict, spike_data):
     return mean_spike_orientation, std_spike_orientation
 
 
-def spike_orientation_median(data: dict, spike_data):
+def spike_orientation_median(data: dict, spike_data, q):
     orientations = data["stim_table"]["orientation"].unique()
     orientations = orientations[~np.isnan(orientations)]
     median_spike_orientation = np.zeros((data["dff"].shape[0], len(orientations)))
@@ -392,7 +392,7 @@ def spike_orientation_median(data: dict, spike_data):
             percentiles = np.percentile(
                 [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
                 axis=0,
-                q=(5, 95),
+                q=q,
             )
             spike_orientation_percentile_5[roi, i] = percentiles[0]
             spike_orientation_percentile_95[roi, i] = percentiles[1]
@@ -401,6 +401,98 @@ def spike_orientation_median(data: dict, spike_data):
         spike_orientation_percentile_5,
         spike_orientation_percentile_95,
     )
+def spike_orientation_mean_temporal(data: dict, spike_data):
+    # mean calcium value for each orientation
+    orientations = data["stim_table"]["orientation"].unique()
+    orientations = np.sort(orientations[~np.isnan(orientations)])
+    temporal_frequencies = data["stim_table"]["temporal_frequency"].unique()
+    temporal_frequencies = np.sort(temporal_frequencies[~np.isnan(temporal_frequencies)])
+
+    mean_spike_orientation_freq = np.zeros(
+        (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
+    )
+    std_spike_orientation_freq = np.zeros(
+        (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
+    )
+    for i, orientation in enumerate(orientations):
+        for j, freq in enumerate(temporal_frequencies):
+            start_times = (
+                data["stim_table"]["start"][
+                    (data["stim_table"]["orientation"] == orientation)
+                    & (data["stim_table"]["temporal_frequency"] == freq)
+                ]
+                .to_numpy()
+                .astype(int)
+            )
+            end_times = (
+                data["stim_table"]["end"][
+                    (data["stim_table"]["orientation"] == orientation)
+                    & (data["stim_table"]["temporal_frequency"] == freq)
+                ]
+                .to_numpy()
+                .astype(int)
+            )
+            for roi in range(data["dff"].shape[0]):
+                mean_spike_orientation_freq[roi, i, j] = np.mean(
+                    [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                    axis=0,
+                )
+                std_spike_orientation_freq[roi, i, j] = np.std(
+                    [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                    axis=0,
+                )
+    return mean_spike_orientation_freq, std_spike_orientation_freq
+
+def spike_orientation_temporal_median(data: dict, spike_data, q):
+
+    orientations = data["stim_table"]["orientation"].unique()
+    orientations = np.sort(orientations[~np.isnan(orientations)])
+    temporal_frequencies = data["stim_table"]["temporal_frequency"].unique()
+    temporal_frequencies = np.sort(temporal_frequencies[~np.isnan(temporal_frequencies)])
+
+    median_spike_orientation_freq = np.zeros(
+        (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
+    )
+    q95 = np.zeros(
+        (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
+    )
+    q5 = np.zeros(  
+        (data["dff"].shape[0], len(orientations), len(temporal_frequencies))
+    )
+
+    for i, orientation in enumerate(orientations):
+        for j, freq in enumerate(temporal_frequencies):
+            start_times = (
+                data["stim_table"]["start"][
+                    (data["stim_table"]["orientation"] == orientation)
+                    & (data["stim_table"]["temporal_frequency"] == freq)
+                ]
+                .to_numpy()
+                .astype(int)
+            )
+            end_times = (
+                data["stim_table"]["end"][
+                    (data["stim_table"]["orientation"] == orientation)
+                    & (data["stim_table"]["temporal_frequency"] == freq)
+                ]
+                .to_numpy()
+                .astype(int)
+            )
+            for roi in range(data["dff"].shape[0]):
+                median_spike_orientation_freq[roi, i, j] = np.mean(
+                    [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                    axis=0,
+                )
+                percentiles = np.percentile(
+                    [np.sum(spike_data[roi][s:e]) for s, e in zip(start_times, end_times)],
+                    axis=0,
+                    q=q,
+                )
+                q5[roi, i, j] = percentiles[0]
+                q95[roi, i, j] = percentiles[1]
+
+    return median_spike_orientation_freq, q5, q95
+
 
 
 # smooth function for the spike data
