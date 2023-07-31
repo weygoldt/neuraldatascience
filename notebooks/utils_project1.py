@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as opt
 import seaborn as sns
-
+import os
 
 def vonMises(theta, alpha, kappa, nu, phi):
     """Evaluate the parametric von Mises tuning curve with parameters p at locations theta.
