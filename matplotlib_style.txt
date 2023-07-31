@@ -9,7 +9,7 @@ lines.linewidth : 1
 
 #### * AXES *
 #axes.titlesize : 8    #larger
-#axes.labelsize:  6 
+axes.labelsize:  10
 axes.titlepad : 3
 axes.linewidth : .3
 axes.spines.right: False
