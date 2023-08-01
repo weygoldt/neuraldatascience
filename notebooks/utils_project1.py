@@ -80,6 +80,7 @@ def tuningCurve(counts, dirs, show=True, tile_name=""):
         ax.plot(dirs, counts, "o", label="data")
         ax.plot(x, y, label="fit")
         ax.set_xlabel("Direction (degree)")
+        ax.set_xticks(np.arange(0, 360, 45))
         ax.set_ylabel("Spike Count")
         ax.set_title(tile_name)
         plt.legend()
