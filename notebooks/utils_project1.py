@@ -561,7 +561,7 @@ def spike_orientation_mean_temporal(data: dict, spike_data):
 def spike_orientation_temporal_median(data: dict, spike_data, q):
     """
     Computes the median and percentile spike counts for each orientation and temporal frequency.
-    
+
     Parameters
     ----------
     data : dict
