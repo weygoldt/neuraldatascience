@@ -4,8 +4,21 @@ import scipy.optimize as opt
 import seaborn as sns
 import pandas as pd
 
+
 # load data
 def load_data(path="."):
+    """Load data from the data file.
+
+    Parameters
+    ----------
+    path: str
+        Path to the data file.
+
+    Returns
+    -------
+    data: dict
+    """
+
     def array2df(d, key, cols):
         d[key] = pd.DataFrame(d[key], columns=cols)
 
@@ -19,6 +32,7 @@ def load_data(path="."):
     array2df(data, "stim_epoch_table", ["stimulus", "start", "end"])
 
     return data
+
 
 def vonMises(theta, alpha, kappa, nu, phi):
     """Evaluate the parametric von Mises tuning curve with parameters p at locations theta.
@@ -105,6 +119,87 @@ def tuningCurve(counts, dirs, show=True, tile_name=""):
         return popt, x, y
 
 
+def testTuning(counts, dirs, psi=1, niters=1000, show=False, title_name=""):
+    """Plot the data if show is True, otherwise just return the fit.
+
+    Parameters
+    ----------
+
+    counts: np.array, shape=(total_n_trials, )
+        the spike count during the stimulation period
+
+    dirs: np.array, shape=(total_n_trials, )
+        the stimulus direction in degrees
+
+    psi: int
+        fourier component to test (1 = direction, 2 = orientation)
+
+    niters: int
+        Number of iterations / permutation
+
+    show: bool
+        Plot or not.
+
+    Returns
+    -------
+    p: float
+        p-value
+    q: float
+        magnitude of second Fourier component
+
+    qdistr: np.array
+        sampling distribution of |q| under the null hypothesis
+
+    """
+    np.random.seed(42)
+    dirs_unique = np.unique(dirs)
+    means = np.zeros(len(dirs_unique))
+    for d, directions in enumerate(np.unique(dirs)):
+        means[d] = np.mean(counts[dirs == directions])
+
+    # imaginary exponential function mu
+    dirs_unique_rad = np.deg2rad(dirs_unique)
+
+    nu = np.exp((1j * psi * dirs_unique_rad) * (2 * np.pi))
+
+    q = means @ nu
+
+    abs_q = np.absolute(q)
+    if abs_q == 0:
+        return 1, abs_q, np.array([0.0] * niters)
+    counts_shuffle = np.array(counts)
+    qs_shuffle = np.zeros(niters)
+    valid_counter = 0
+
+    for i in range(niters):
+        np.random.shuffle(counts_shuffle)
+        means = np.zeros(len(dirs_unique))
+        for d, directions in enumerate(np.unique(dirs)):
+            means[d] = np.mean(counts_shuffle[dirs == directions])
+
+        q_shuffle = means @ nu
+        abs_q_shuffle = np.absolute(q_shuffle)
+        qs_shuffle[i] = abs_q_shuffle
+
+        if abs_q_shuffle > abs_q:
+            valid_counter += 1
+
+    p = valid_counter / niters
+
+    if show is True:
+        fig, ax = plt.subplots(figsize=(7, 4))
+        sns.histplot(qs_shuffle, bins=100, stat="proportion", ax=ax, label="null")
+        ax.axvline(abs_q, color="red", label="observed")
+        ax.set_xlabel("|q|")
+        ax.set_ylabel("Fraction of Runs")
+        ax.legend()
+        ax.set_title(f"{title_name}")
+
+        # you can use sns.histplot for the histogram
+    else:
+        return p, abs_q, qs_shuffle
+
+
 def get_spike_counts_per_orientation(data, spike_data, roi):
     """
     Compute the spike count for a given region of interest (ROI) for each orientation in the stimulus table.
@@ -188,87 +283,6 @@ def get_spike_counts_per_orientation_temporalfreq(data, spike_data, roi, tempora
     counts = np.array(counts)[idx]
 
     return dirs, counts
-
-
-def testTuning(counts, dirs, psi=1, niters=1000, show=False, title_name=""):
-    """Plot the data if show is True, otherwise just return the fit.
-
-    Parameters
-    ----------
-
-    counts: np.array, shape=(total_n_trials, )
-        the spike count during the stimulation period
-
-    dirs: np.array, shape=(total_n_trials, )
-        the stimulus direction in degrees
-
-    psi: int
-        fourier component to test (1 = direction, 2 = orientation)
-
-    niters: int
-        Number of iterations / permutation
-
-    show: bool
-        Plot or not.
-
-    Returns
-    -------
-    p: float
-        p-value
-    q: float
-        magnitude of second Fourier component
-
-    qdistr: np.array
-        sampling distribution of |q| under the null hypothesis
-
-    """
-    np.random.seed(42)
-    dirs_unique = np.unique(dirs)
-    means = np.zeros(len(dirs_unique))
-    for d, directions in enumerate(np.unique(dirs)):
-        means[d] = np.mean(counts[dirs == directions])
-
-    # imaginary exponential function mu
-    dirs_unique_rad = np.deg2rad(dirs_unique)
-
-    nu = np.exp((1j * psi * dirs_unique_rad) * (2 * np.pi))
-
-    q = means @ nu
-
-    abs_q = np.absolute(q)
-    if abs_q == 0:
-        return 1, abs_q, np.array([0.0] * niters)
-    counts_shuffle = np.array(counts)
-    qs_shuffle = np.zeros(niters)
-    valid_counter = 0
-
-    for i in range(niters):
-        np.random.shuffle(counts_shuffle)
-        means = np.zeros(len(dirs_unique))
-        for d, directions in enumerate(np.unique(dirs)):
-            means[d] = np.mean(counts_shuffle[dirs == directions])
-
-        q_shuffle = means @ nu
-        abs_q_shuffle = np.absolute(q_shuffle)
-        qs_shuffle[i] = abs_q_shuffle
-
-        if abs_q_shuffle > abs_q:
-            valid_counter += 1
-
-    p = valid_counter / niters
-
-    if show is True:
-        fig, ax = plt.subplots(figsize=(7, 4))
-        sns.histplot(qs_shuffle, bins=100, stat="proportion", ax=ax, label="null")
-        ax.axvline(abs_q, color="red", label="observed")
-        ax.set_xlabel("|q|")
-        ax.set_ylabel("Fraction of Runs")
-        ax.legend()
-        ax.set_title(f"{title_name}")
-
-        # you can use sns.histplot for the histogram
-    else:
-        return p, abs_q, qs_shuffle
 
 
 def dff_orientation(data: dict):
@@ -403,9 +417,7 @@ def spike_orientation_mean(data: dict, spike_data):
     Parameters:
     -----------
     data : dict
-        A dictionary containing the following keys:
-        - "stim_table": a pandas DataFrame with columns "start", "end", and "orientation", representing the stimulus presentation times and orientations.
-        - "dff": a numpy array of shape (n_rois, n_frames), representing the fluorescence signals of the ROIs.
+        The data dictionary. See `load_data` for details.
     spike_data : list of numpy arrays
         A list of numpy arrays of shape (n_rois, n_frames), representing the spike counts of each ROI.
 
@@ -454,7 +466,7 @@ def spike_orientation_median(data: dict, spike_data: np.ndarray, q: int) -> tupl
     Parameters
     ----------
     data : dict
-        A dictionary containing the stimulus table and dff data.
+        The data dictionary. See `load_data` for details.
     spike_data : list of numpy arrays
         A list of numpy arrays of shape (n_rois, n_frames), representing the spike counts of each ROI.
     q : int
@@ -517,7 +529,7 @@ def spike_orientation_mean_temporal(data: dict, spike_data):
     Parameters
     ----------
     data : dict
-        A dictionary containing the stimulus table and dff data.
+        The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
         A numpy array containing spike counts for each ROI.
 
@@ -585,7 +597,7 @@ def spike_orientation_temporal_median(data: dict, spike_data, q):
     Parameters
     ----------
     data : dict
-        A dictionary containing the stimulus table and dff data.
+        The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
         A numpy array containing spike counts for each ROI.
     q : tuple
