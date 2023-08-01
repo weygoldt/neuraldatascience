@@ -87,7 +87,6 @@ def tuningCurve(counts, dirs, show=True, tile_name=""):
         y-axis for plotting
     """
 
-    # insert your code here
     upper_bounds = (np.inf, np.inf, np.inf, 360)
     lower_bounds = (0, 0, 0, 0)
     bounds = (lower_bounds, upper_bounds)
@@ -209,7 +208,7 @@ def get_spike_counts_per_orientation(data, spike_data, roi):
     data : dict
         The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
-        A array of spike data with shape (num_rois, num_samples).
+        An array of spike data (counts) with shape (n_rois, n_frames).
     roi : int
         The index of the ROI for which to compute the spike counts.
 
@@ -248,8 +247,7 @@ def get_spike_counts_per_orientation_temporalfreq(data, spike_data, roi, tempora
     data : dict
         The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
-        A array of spike counts, where the first dimension corresponds to the ROI and the second dimension
-        corresponds to time bins.
+        A array of spike data (counts) with shape (n_rois, n_frames).
     roi : int
         The index of the ROI for which to compute the spike counts.
     temporal_freq : float
@@ -418,8 +416,8 @@ def spike_orientation_mean(data: dict, spike_data):
     -----------
     data : dict
         The data dictionary. See `load_data` for details.
-    spike_data : list of numpy arrays
-        A list of numpy arrays of shape (n_rois, n_frames), representing the spike counts of each ROI.
+    spike_data : numpy.ndarray
+        A array of spike data (counts) with shape (n_rois, n_frames).
 
     Returns:
     --------
@@ -467,10 +465,10 @@ def spike_orientation_median(data: dict, spike_data: np.ndarray, q: int) -> tupl
     ----------
     data : dict
         The data dictionary. See `load_data` for details.
-    spike_data : list of numpy arrays
-        A list of numpy arrays of shape (n_rois, n_frames), representing the spike counts of each ROI.
-    q : int
-        The percentile value to calculate.
+    spike_data : numpy.ndarray
+        A array of spike data (counts) with shape (n_rois, n_frames).
+    q : tuple (float, float)
+        The percentiles to calculate. (2.5, 97.5) will calculate the 2.5th and 97.5th percentiles.
 
     Returns
     -------
@@ -531,7 +529,7 @@ def spike_orientation_mean_temporal(data: dict, spike_data):
     data : dict
         The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
-        A numpy array containing spike counts for each ROI.
+        A array of spike data (counts) with shape (n_rois, n_frames).
 
     Returns
     -------
@@ -599,9 +597,9 @@ def spike_orientation_temporal_median(data: dict, spike_data, q):
     data : dict
         The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
-        A numpy array containing spike counts for each ROI.
-    q : tuple
-        The percentile values to calculate.
+        A array of spike data (counts) with shape (n_rois, n_frames).
+    q : tuple (float, float)
+        The percentiles to calculate. (2.5, 97.5) will calculate the 2.5th and 97.5th percentiles.
 
     Returns
     -------
