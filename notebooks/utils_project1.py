@@ -213,7 +213,7 @@ def testTuning(counts, dirs, psi=1, niters=1000, show=False, title_name=""):
 
 
 def dff_orientation(data: dict):
-    """Calculates the average respones in all trials and takes the mean/std dff for each orientation for each roi. 
+    """Calculates the average respones in all trials and takes the mean/std dff for each orientation for each roi.
 
     Parameters
     ----------
