@@ -440,14 +440,14 @@ def spike_orientation_median(data: dict, spike_data: np.ndarray, q: int) -> tupl
     data : dict
         A dictionary containing the stimulus table and dff data.
     spike_data : numpy.ndarray
-        A 3D numpy array containing spike data for each ROI.
+        A numpy array containing spike data for each ROI.
     q : int
         The percentile value to calculate.
 
     Returns
     -------
     tuple
-        A tuple containing three 2D numpy arrays:
+        A tuple containing three numpy arrays:
             - median_spike_orientation: The median spike orientation for each ROI and orientation.
             - spike_orientation_percentile_5: The 5th percentile spike orientation for each ROI and orientation.
             - spike_orientation_percentile_95: The 95th percentile spike orientation for each ROI and orientation.
