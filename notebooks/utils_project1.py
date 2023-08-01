@@ -514,7 +514,7 @@ def spike_orientation_temporal_median(data: dict, spike_data, q):
     return median_spike_orientation_freq, q5, q95
 
 
-# smooth function for the spike data
+# smooth function for the PSTH spike data
 def smooth_rate(data, instant_firing_rate, window):
     """
     Smooth the firing rate by taking the average of the firing rate over a window.
