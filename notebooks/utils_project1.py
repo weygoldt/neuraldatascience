@@ -2,7 +2,23 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as opt
 import seaborn as sns
+import pandas as pd
 
+# load data
+def load_data(path="."):
+    def array2df(d, key, cols):
+        d[key] = pd.DataFrame(d[key], columns=cols)
+
+    data = np.load(path + "/dff_data_dsi.npz", allow_pickle=True)
+    data = dict(data)
+    array2df(
+        data,
+        "stim_table",
+        ["temporal_frequency", "orientation", "blank_sweep", "start", "end"],
+    )
+    array2df(data, "stim_epoch_table", ["stimulus", "start", "end"])
+
+    return data
 
 def vonMises(theta, alpha, kappa, nu, phi):
     """Evaluate the parametric von Mises tuning curve with parameters p at locations theta.
@@ -96,7 +112,7 @@ def get_spike_counts_per_orientation(data, spike_data, roi):
     Parameters
     ----------
     data : dict
-        A dictionary containing the stimulus table with columns "start", "end", and "orientation".
+        The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
         A array of spike data with shape (num_rois, num_samples).
     roi : int
@@ -135,7 +151,7 @@ def get_spike_counts_per_orientation_temporalfreq(data, spike_data, roi, tempora
     Parameters
     ----------
     data : dict
-        A dictionary containing the stimulus table and metadata.
+        The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
         A array of spike counts, where the first dimension corresponds to the ROI and the second dimension
         corresponds to time bins.
@@ -261,7 +277,7 @@ def dff_orientation(data: dict):
     Parameters
     ----------
     data : dict
-        The data dictionary.
+        The data dictionary. See `load_data` for details.
 
     Returns
     -------
@@ -391,7 +407,7 @@ def spike_orientation_mean(data: dict, spike_data):
         - "stim_table": a pandas DataFrame with columns "start", "end", and "orientation", representing the stimulus presentation times and orientations.
         - "dff": a numpy array of shape (n_rois, n_frames), representing the fluorescence signals of the ROIs.
     spike_data : list of numpy arrays
-        A list of numpy arrays of shape (n_frames,), representing the spike counts of each ROI.
+        A list of numpy arrays of shape (n_rois, n_frames), representing the spike counts of each ROI.
 
     Returns:
     --------
@@ -439,8 +455,8 @@ def spike_orientation_median(data: dict, spike_data: np.ndarray, q: int) -> tupl
     ----------
     data : dict
         A dictionary containing the stimulus table and dff data.
-    spike_data : numpy.ndarray
-        A numpy array containing spike data for each ROI.
+    spike_data : list of numpy arrays
+        A list of numpy arrays of shape (n_rois, n_frames), representing the spike counts of each ROI.
     q : int
         The percentile value to calculate.
 
@@ -508,6 +524,9 @@ def spike_orientation_mean_temporal(data: dict, spike_data):
     Returns
     -------
     tuple
+        A tuple containing two numpy arrays:
+            - mean_spike_orientation_freq: The mean spike counts for each ROI, orientation, and temporal frequency.
+            - std_spike_orientation_freq: The standard deviation of the spike counts for each ROI, orientation, and temporal frequency.
     """
 
     orientations = data["stim_table"]["orientation"].unique()
@@ -556,7 +575,7 @@ def spike_orientation_mean_temporal(data: dict, spike_data):
                     ],
                     axis=0,
                 )
-    return mean_spike_orientation_freq, std_spike_orientation_freq
+    return (mean_spike_orientation_freq, std_spike_orientation_freq)
 
 
 def spike_orientation_temporal_median(data: dict, spike_data, q):
