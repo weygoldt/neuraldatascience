@@ -570,7 +570,7 @@ def spike_orientation_temporal_median(data: dict, spike_data, q):
     spike_data : numpy.ndarray
         A numpy array containing spike counts for each ROI.
     q : tuple
-        The percentile value to calculate.
+        The percentile values to calculate.
 
     Returns
     -------
