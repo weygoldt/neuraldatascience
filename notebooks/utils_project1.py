@@ -560,6 +560,23 @@ def spike_orientation_mean_temporal(data: dict, spike_data):
 
 
 def spike_orientation_temporal_median(data: dict, spike_data, q):
+    """
+    Computes the median and percentile spike counts for each orientation and temporal frequency.
+    
+    Parameters
+    ----------
+    data : dict
+        A dictionary containing the stimulus table and dff data.
+    spike_data : numpy.ndarray
+        A numpy array containing spike counts for each ROI.
+    q : tuple
+        The percentile value to calculate.
+
+    Returns
+    -------
+    tuple
+    """
+
     orientations = data["stim_table"]["orientation"].unique()
     orientations = np.sort(orientations[~np.isnan(orientations)])
     temporal_frequencies = data["stim_table"]["temporal_frequency"].unique()
