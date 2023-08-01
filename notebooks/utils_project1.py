@@ -537,13 +537,16 @@ def smooth_rate(data, instant_firing_rate, window):
     smoothed_rate.fill(np.nan)
     # define the step size
     step_size = int(np.floor(window / 2))
-    # define the length of the window
+    # define the length of the window to smooth over
     length = np.arange(
         (window - step_size), len(instant_firing_rate[0]) - step_size + 1
     )
+    # get the unique orientations sorted
     orientations = data["stim_table"]["orientation"].unique()
     orientations = np.sort(orientations[~np.isnan(orientations)])
 
+    # calculate the mean of the smoothing window, save it to the matrix and 
+    # then shift the window by step_size
     for i in range(len(instant_firing_rate)):
         for j in range(len(length)):
             smoothed_rate[i, j] = np.nanmean(
