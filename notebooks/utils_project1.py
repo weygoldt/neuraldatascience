@@ -215,9 +215,9 @@ def get_spike_counts_per_orientation(data, spike_data, roi):
     Returns
     -------
     dirs : numpy.ndarray
-        A array of orientation values in degrees, sorted in ascending order.
+        An array of orientation values in degrees, sorted in ascending order.
     counts : numpy.ndarray
-        A array of spike counts for the given ROI, corresponding to each orientation in `dirs`.
+        An array of spike counts for the given ROI, corresponding to each orientation in `dirs`.
     """
 
     dirs = []
@@ -247,7 +247,7 @@ def get_spike_counts_per_orientation_temporalfreq(data, spike_data, roi, tempora
     data : dict
         The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
-        A array of spike data (counts) with shape (n_rois, n_frames).
+        An array of spike data (counts) with shape (n_rois, n_frames).
     roi : int
         The index of the ROI for which to compute the spike counts.
     temporal_freq : float
@@ -284,7 +284,7 @@ def get_spike_counts_per_orientation_temporalfreq(data, spike_data, roi, tempora
 
 
 def dff_orientation(data: dict):
-    """Calculates the average respones in all trials and takes the mean/std dff for each orientation for each roi.
+    """Calculates the average respones in all trials and takes the mean/std df/f for each orientation for each roi.
 
     Parameters
     ----------
@@ -294,9 +294,9 @@ def dff_orientation(data: dict):
     Returns
     -------
     mean_calcium_orientation : np.ndarray (n_rois, n_orientations)
-        The mean dff for each orientation for each roi.
+        The mean df/f for each orientation for each roi.
     std_calcium_orientation : np.ndarray (n_rois, n_orientations)
-        The standard deviation of the dff for each orientation for each roi.
+        The standard deviation of the df/f for each orientation for each roi.
     """
 
     orientations = data["stim_table"]["orientation"].unique()
@@ -320,7 +320,7 @@ def dff_orientation(data: dict):
         )
 
         for roi in range(data["dff"].shape[0]):
-            # calculate the mean dff for each orientation for each roi
+            # calculate the mean df/f for each orientation for each roi
             mean_calcium_orientation[roi, i] = np.mean(
                 [
                     np.mean(data["dff"][roi, s:e])
@@ -328,7 +328,7 @@ def dff_orientation(data: dict):
                 ],
                 axis=0,
             )
-            # calculate the std dff for each orientation for each roi
+            # calculate the std df/f for each orientation for each roi
             std_calcium_orientation[roi, i] = np.std(
                 [
                     np.mean(data["dff"][roi, s:e])
@@ -340,7 +340,7 @@ def dff_orientation(data: dict):
 
 
 def dff_orientation_temporal_frequency(data: dict):
-    """Calculate the mean/std dff for each orientation for each roi with respect to
+    """Calculate the mean/std df/f for each orientation for each roi with respect to
     the temporal frequency.
 
     Parameters
@@ -351,9 +351,9 @@ def dff_orientation_temporal_frequency(data: dict):
     Returns
     -------
     mean_calcium_orientation : np.ndarray (n_rois, n_orientations, n_temporal_frequencies)
-        The mean dff for each orientation and temporal frequency for each roi.
+        The mean df/f for each orientation and temporal frequency for each roi.
     std_calcium_orientation : np.ndarray (n_rois, n_orientations, n_temporal_frequencies)
-        The standard deviation of the dff for each orientation and temporal frequency
+        The standard deviation of the df/f for each orientation and temporal frequency
             for each roi.
     """
 
@@ -410,21 +410,24 @@ def dff_orientation_temporal_frequency(data: dict):
 
 def spike_orientation_mean(data: dict, spike_data):
     """
-    Computes the mean and standard deviation of the spike counts for each ROI and orientation in the stimulus table.
+    Computes the mean and standard deviation of the spike counts for each ROI 
+    and orientation in the stimulus table.
 
     Parameters:
     -----------
     data : dict
         The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
-        A array of spike data (counts) with shape (n_rois, n_frames).
+        An array of spike data (counts) with shape (n_rois, n_frames).
 
     Returns:
     --------
     mean_spike_orientation : numpy array
-        A numpy array of shape (n_rois, n_orientations), representing the mean spike counts for each ROI and orientation.
+        A numpy array of shape (n_rois, n_orientations), representing the mean spike counts 
+        for each ROI and orientation.
     std_spike_orientation : numpy array
-        A numpy array of shape (n_rois, n_orientations), representing the standard deviation of the spike counts for each ROI and orientation.
+        A numpy array of shape (n_rois, n_orientations), representing the standard deviation 
+        of the spike counts for each ROI and orientation.
     """
 
     orientations = data["stim_table"]["orientation"].unique()
@@ -466,7 +469,7 @@ def spike_orientation_median(data: dict, spike_data: np.ndarray, q: int) -> tupl
     data : dict
         The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
-        A array of spike data (counts) with shape (n_rois, n_frames).
+        An array of spike data (counts) with shape (n_rois, n_frames).
     q : tuple (float, float)
         The percentiles to calculate. (2.5, 97.5) will calculate the 2.5th and 97.5th percentiles.
 
@@ -529,7 +532,7 @@ def spike_orientation_mean_temporal(data: dict, spike_data):
     data : dict
         The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
-        A array of spike data (counts) with shape (n_rois, n_frames).
+        An array of spike data (counts) with shape (n_rois, n_frames).
 
     Returns
     -------
@@ -597,7 +600,7 @@ def spike_orientation_temporal_median(data: dict, spike_data, q):
     data : dict
         The data dictionary. See `load_data` for details.
     spike_data : numpy.ndarray
-        A array of spike data (counts) with shape (n_rois, n_frames).
+        An array of spike data (counts) with shape (n_rois, n_frames).
     q : tuple (float, float)
         The percentiles to calculate. (2.5, 97.5) will calculate the 2.5th and 97.5th percentiles.
 
