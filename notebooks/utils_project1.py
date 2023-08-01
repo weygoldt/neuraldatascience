@@ -508,8 +508,6 @@ def spike_orientation_mean_temporal(data: dict, spike_data):
     Returns
     -------
     tuple
-        A tuple containing two 3D numpy arrays. The first array contains the mean spike counts for each ROI, orientation, and temporal frequency.
-        The second array contains the standard deviation of spike counts for each ROI, orientation, and temporal frequency.
     """
 
     orientations = data["stim_table"]["orientation"].unique()
