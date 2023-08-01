@@ -514,7 +514,6 @@ def spike_orientation_temporal_median(data: dict, spike_data, q):
     return median_spike_orientation_freq, q5, q95
 
 
-# smooth function for the PSTH spike data
 def smooth_rate(data, instant_firing_rate, window):
     """
     Smooth the firing rate by taking the average of the firing rate over a window.
@@ -533,6 +532,7 @@ def smooth_rate(data, instant_firing_rate, window):
     smoothed_rate : np.ndarray (n_orientations, n_timepoints)
         The smoothed firing rate for each orientation for each roi.
     """
+
     smoothed_rate = np.empty((len(instant_firing_rate), len(instant_firing_rate[0])))
     smoothed_rate.fill(np.nan)
     step_size = int(np.floor(window / 2))
@@ -543,9 +543,7 @@ def smooth_rate(data, instant_firing_rate, window):
     orientations = np.sort(orientations[~np.isnan(orientations)])
 
     for i in range(len(instant_firing_rate)):
-        # print(f"i = {i}")
         for j in range(len(length)):
-            # print(f"j = {j}")
             smoothed_rate[i, j] = np.nanmean(
                 instant_firing_rate[orientations[i]][(j - step_size) : (j + step_size)]
             )
