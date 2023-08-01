@@ -90,7 +90,26 @@ def tuningCurve(counts, dirs, show=True, tile_name=""):
 
 
 def get_spike_counts_per_orientation(data, spike_data, roi):
-    # spike count for one roi for each orientation
+    """
+    Compute the spike count for a given region of interest (ROI) for each orientation in the stimulus table.
+
+    Parameters
+    ----------
+    data : dict
+        A dictionary containing the stimulus table with columns "start", "end", and "orientation".
+    spike_data : numpy.ndarray
+        A 2D array of spike data with shape (num_rois, num_samples).
+    roi : int
+        The index of the ROI for which to compute the spike counts.
+
+    Returns
+    -------
+    dirs : numpy.ndarray
+        A 1D array of orientation values in degrees, sorted in ascending order.
+    counts : numpy.ndarray
+        A 1D array of spike counts for the given ROI, corresponding to each orientation in `dirs`.
+    """
+
     dirs = []
     counts = []
     for i, row in enumerate(data["stim_table"].iterrows()):
@@ -109,7 +128,31 @@ def get_spike_counts_per_orientation(data, spike_data, roi):
 
 
 def get_spike_counts_per_orientation_temporalfreq(data, spike_data, roi, temporal_freq):
-    # spike count for one roi for each orientation
+    """
+    Compute the spike count for a given region of interest (ROI) and each orientation of a visual stimulus
+    with a given temporal frequency.
+
+    Parameters
+    ----------
+    data : dict
+        A dictionary containing the stimulus table and metadata.
+    spike_data : numpy.ndarray
+        A 2D array of spike counts, where the first dimension corresponds to the ROI and the second dimension
+        corresponds to time bins.
+    roi : int
+        The index of the ROI for which to compute the spike counts.
+    temporal_freq : float
+        The temporal frequency of the visual stimulus for which to compute the spike counts.
+
+    Returns
+    -------
+    dirs : numpy.ndarray
+        A 1D array of orientation values in degrees, sorted in ascending order.
+    counts : numpy.ndarray
+        A 1D array of spike counts, where each element corresponds to the spike count for the corresponding
+        orientation value in `dirs`.
+    """
+
     dirs = []
     counts = []
     for i, row in enumerate(
@@ -338,6 +381,26 @@ def dff_orientation_temporal_frequency(data: dict):
 
 
 def spike_orientation_mean(data: dict, spike_data):
+    """
+    Computes the mean and standard deviation of the spike counts for each ROI and orientation in the stimulus table.
+
+    Parameters:
+    -----------
+    data : dict
+        A dictionary containing the following keys:
+        - "stim_table": a pandas DataFrame with columns "start", "end", and "orientation", representing the stimulus presentation times and orientations.
+        - "dff": a numpy array of shape (n_rois, n_frames), representing the fluorescence signals of the ROIs.
+    spike_data : list of numpy arrays
+        A list of numpy arrays of shape (n_frames,), representing the spike counts of each ROI.
+
+    Returns:
+    --------
+    mean_spike_orientation : numpy array
+        A numpy array of shape (n_rois, n_orientations), representing the mean spike counts for each ROI and orientation.
+    std_spike_orientation : numpy array
+        A numpy array of shape (n_rois, n_orientations), representing the standard deviation of the spike counts for each ROI and orientation.
+    """
+
     orientations = data["stim_table"]["orientation"].unique()
     orientations = orientations[~np.isnan(orientations)]
     mean_spike_orientation = np.zeros((data["dff"].shape[0], len(orientations)))
@@ -368,7 +431,29 @@ def spike_orientation_mean(data: dict, spike_data):
     return mean_spike_orientation, std_spike_orientation
 
 
-def spike_orientation_median(data: dict, spike_data, q):
+def spike_orientation_median(data: dict, spike_data: np.ndarray, q: int) -> tuple:
+    """
+    Calculates the median and percentile spike orientation for each ROI in the given spike data.
+
+    Parameters
+    ----------
+    data : dict
+        A dictionary containing the stimulus table and dff data.
+    spike_data : numpy.ndarray
+        A 3D numpy array containing spike data for each ROI.
+    q : int
+        The percentile value to calculate.
+
+    Returns
+    -------
+    tuple
+        A tuple containing three 2D numpy arrays:
+            - median_spike_orientation: The median spike orientation for each ROI and orientation.
+            - spike_orientation_percentile_5: The 5th percentile spike orientation for each ROI and orientation.
+            - spike_orientation_percentile_95: The 95th percentile spike orientation for each ROI and orientation.
+
+    """
+
     orientations = data["stim_table"]["orientation"].unique()
     orientations = orientations[~np.isnan(orientations)]
     median_spike_orientation = np.zeros((data["dff"].shape[0], len(orientations)))
@@ -410,7 +495,23 @@ def spike_orientation_median(data: dict, spike_data, q):
 
 
 def spike_orientation_mean_temporal(data: dict, spike_data):
-    # mean calcium value for each orientation
+    """
+    Computes the mean and standard deviation of spike counts for each orientation and temporal frequency.
+
+    Parameters
+    ----------
+    data : dict
+        A dictionary containing the stimulus table and dff data.
+    spike_data : numpy.ndarray
+        A 3D numpy array containing spike counts for each ROI.
+
+    Returns
+    -------
+    tuple
+        A tuple containing two 3D numpy arrays. The first array contains the mean spike counts for each ROI, orientation, and temporal frequency.
+        The second array contains the standard deviation of spike counts for each ROI, orientation, and temporal frequency.
+    """
+
     orientations = data["stim_table"]["orientation"].unique()
     orientations = np.sort(orientations[~np.isnan(orientations)])
     temporal_frequencies = data["stim_table"]["temporal_frequency"].unique()
@@ -545,7 +646,7 @@ def smooth_rate(data, instant_firing_rate, window):
     orientations = data["stim_table"]["orientation"].unique()
     orientations = np.sort(orientations[~np.isnan(orientations)])
 
-    # calculate the mean of the smoothing window, save it to the matrix and 
+    # calculate the mean of the smoothing window, save it to the matrix and
     # then shift the window by step_size
     for i in range(len(instant_firing_rate)):
         for j in range(len(length)):
