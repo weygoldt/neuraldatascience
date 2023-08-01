@@ -532,10 +532,12 @@ def smooth_rate(data, instant_firing_rate, window):
     smoothed_rate : np.ndarray (n_orientations, n_timepoints)
         The smoothed firing rate for each orientation for each roi.
     """
-
+    # create matrix filled with nans
     smoothed_rate = np.empty((len(instant_firing_rate), len(instant_firing_rate[0])))
     smoothed_rate.fill(np.nan)
+    # define the step size
     step_size = int(np.floor(window / 2))
+    # define the length of the window
     length = np.arange(
         (window - step_size), len(instant_firing_rate[0]) - step_size + 1
     )
