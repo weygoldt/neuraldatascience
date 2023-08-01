@@ -24,7 +24,6 @@ def vonMises(theta, alpha, kappa, nu, phi):
     theta = np.radians(theta)
     phi = np.radians(phi)
 
-    # insert your code here
     f = np.exp(
         alpha + kappa * (np.cos(2 * (theta - phi)) - 1) + nu * (np.cos(theta - phi) - 1)
     )
@@ -98,16 +97,16 @@ def get_spike_counts_per_orientation(data, spike_data, roi):
     data : dict
         A dictionary containing the stimulus table with columns "start", "end", and "orientation".
     spike_data : numpy.ndarray
-        A 2D array of spike data with shape (num_rois, num_samples).
+        A array of spike data with shape (num_rois, num_samples).
     roi : int
         The index of the ROI for which to compute the spike counts.
 
     Returns
     -------
     dirs : numpy.ndarray
-        A 1D array of orientation values in degrees, sorted in ascending order.
+        A array of orientation values in degrees, sorted in ascending order.
     counts : numpy.ndarray
-        A 1D array of spike counts for the given ROI, corresponding to each orientation in `dirs`.
+        A array of spike counts for the given ROI, corresponding to each orientation in `dirs`.
     """
 
     dirs = []
@@ -137,7 +136,7 @@ def get_spike_counts_per_orientation_temporalfreq(data, spike_data, roi, tempora
     data : dict
         A dictionary containing the stimulus table and metadata.
     spike_data : numpy.ndarray
-        A 2D array of spike counts, where the first dimension corresponds to the ROI and the second dimension
+        A array of spike counts, where the first dimension corresponds to the ROI and the second dimension
         corresponds to time bins.
     roi : int
         The index of the ROI for which to compute the spike counts.
@@ -147,9 +146,9 @@ def get_spike_counts_per_orientation_temporalfreq(data, spike_data, roi, tempora
     Returns
     -------
     dirs : numpy.ndarray
-        A 1D array of orientation values in degrees, sorted in ascending order.
+        An array of orientation values in degrees, sorted in ascending order.
     counts : numpy.ndarray
-        A 1D array of spike counts, where each element corresponds to the spike count for the corresponding
+        An array of spike counts, where each element corresponds to the spike count for the corresponding
         orientation value in `dirs`.
     """
 
@@ -261,7 +260,7 @@ def dff_orientation(data: dict):
     Parameters
     ----------
     data : dict
-        The data dictionary. See `load_data` for details.
+        The data dictionary.
 
     Returns
     -------
@@ -503,7 +502,7 @@ def spike_orientation_mean_temporal(data: dict, spike_data):
     data : dict
         A dictionary containing the stimulus table and dff data.
     spike_data : numpy.ndarray
-        A 3D numpy array containing spike counts for each ROI.
+        A numpy array containing spike counts for each ROI.
 
     Returns
     -------
